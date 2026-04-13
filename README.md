@@ -2,7 +2,7 @@
 
 **Pandior** is a next-generation, AI-powered productivity hub designed to bridge the gap between natural language and structured scheduling. Built with a focus on speed, intelligence, and a premium "3D-glass" aesthetic, Pandior turns your voice and text into actionable calendar events and tasks.
 
-![Pandior Preview](https://picsum.photos/seed/productivity/1200/600)
+![Pandior Preview](https://chatgpt.com/s/m_69dca1ef391c81919c0ed07e5806cca3)
 
 ## ✨ Key Features
 
