@@ -1,0 +1,7 @@
+{
+  "name": "PANDIOR: Smart Event Scheduler",
+  "description": "An AI-powered event scheduling app with voice input, smart calendar integration, and gamified reminders.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

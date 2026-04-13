@@ -1,11 +1,69 @@
-<div align="center">
+# Pandior: Smart AI Event Scheduler 🚀
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+**Pandior** is a next-generation, AI-powered productivity hub designed to bridge the gap between natural language and structured scheduling. Built with a focus on speed, intelligence, and a premium "3D-glass" aesthetic, Pandior turns your voice and text into actionable calendar events and tasks.
 
-  <h1>Built with AI Studio</h2>
+![Pandior Preview](https://picsum.photos/seed/productivity/1200/600)
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## ✨ Key Features
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+- **🧠 AI Natural Language Processing:** Powered by **Google Gemini**, Pandior understands complex requests like *"Schedule a 1-hour team sync for tomorrow at 10 AM"* or *"Remind me to review the project spec by Friday."*
+- **🎙️ Voice-First Interaction:** Integrated speech recognition allows you to manage your entire schedule hands-free.
+- **🎮 Gamified Productivity:** Earn XP, level up, and maintain daily streaks as you complete tasks and organize your life.
+- **📅 Smart Calendar & Task Vault:** A beautiful, interactive calendar with real-time updates and a secure vault for your files and tasks.
+- **💎 Premium 3D UI:** A distinctive "lightning-border" aesthetic with regulated 3D hover effects, smooth quintic easing, and glassmorphism.
+- **🛡️ Robust & Stable:** Built with defensive coding patterns, including safe localStorage parsing and comprehensive error handling for AI and Voice APIs.
+- **📱 Cross-Platform Ready:** Optimized for **Android** (via Capacitor), **Desktop** (via Electron), and the **Web**.
 
-</div>
+## 🛠️ Tech Stack
+
+- **Frontend:** React 19, TypeScript, Vite
+- **Styling:** Tailwind CSS 4, shadcn/ui, Motion (Framer Motion)
+- **AI Brain:** Google GenAI (Gemini Pro)
+- **Native Bridge:** Capacitor (Android), Electron (Desktop)
+- **Icons & UI:** Lucide React, Sonner (Toasts)
+- **Date Logic:** date-fns
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- A Google Gemini API Key
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/pandior.git
+   cd pandior
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables:**
+   Create a `.env` file in the root and add your Gemini API key:
+   ```env
+   VITE_GEMINI_API_KEY=your_api_key_here
+   ```
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+## 📱 Mobile & Desktop
+
+- **Android:** Run `npm run android:sync` to sync the web build to the Android project.
+- **Desktop:** Run `npm run electron:dev` to launch the app in an Electron window.
+
+## 📄 License
+
+This project is licensed under the Apache-2.0 License.
+
+---
+
+Built with ❤️ by [Jedi Amos](https://github.com/jediamos2)
