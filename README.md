@@ -67,4 +67,4 @@ This project is licensed under the Apache-2.0 License.
 
 ---
 
-Built with ❤️ by [Jedidiah](https://github.com/jediamos2)
+Built with ❤️ by [Jedi Amos](https://github.com/jediamos2)
