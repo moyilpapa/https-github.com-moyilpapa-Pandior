@@ -489,14 +489,14 @@ export default function App() {
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{format(new Date(), 'EEEE')}</span>
               <span className="text-sm font-bold">{format(new Date(), 'MMMM d, yyyy')}</span>
             </div>
-            <div className="flex items-center gap-1 px-3 py-1 bg-primary/10 rounded-full text-primary font-medium text-sm">
-              <Flame size={16} className="fill-primary" />
-              <span>{streak} Day Streak</span>
+            <div className="flex items-center gap-1 px-2 md:px-3 py-1 bg-primary/10 rounded-full text-primary font-medium text-[10px] md:text-sm">
+              <Flame size={14} className="fill-primary md:w-4 md:h-4" />
+              <span>{streak} Days</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-secondary rounded-full text-secondary-foreground font-medium text-sm">
-              <Trophy size={16} className="text-yellow-500" />
-              <span>Level {level}</span>
-              <div className="w-12 h-1.5 bg-muted rounded-full overflow-hidden ml-1">
+            <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 bg-secondary rounded-full text-secondary-foreground font-medium text-[10px] md:text-sm">
+              <Trophy size={14} className="text-yellow-500 md:w-4 md:h-4" />
+              <span>Lvl {level}</span>
+              <div className="hidden sm:block w-12 h-1.5 bg-muted rounded-full overflow-hidden ml-1">
                 <div 
                   className="h-full bg-primary transition-all duration-500" 
                   style={{ width: `${(xp % 100)}%` }}
@@ -517,7 +517,12 @@ export default function App() {
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-background"></span>
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setActiveTab('settings')}
+              className={activeTab === 'settings' ? 'text-primary bg-primary/10' : ''}
+            >
               <Settings size={20} />
             </Button>
           </div>
@@ -526,6 +531,53 @@ export default function App() {
         {/* Content Area */}
         <div className="flex-1 overflow-hidden p-4 md:p-6 relative pb-24 md:pb-6">
           <div className="max-w-6xl mx-auto h-full relative">
+            {/* Voice Input FAB (Desktop) */}
+            <div className="hidden md:flex absolute bottom-6 right-6 flex-col items-end gap-4 z-30">
+              <AnimatePresence>
+                {isListening && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.8 }}
+                    className="bg-card/95 backdrop-blur-xl border border-rose-500/40 p-4 rounded-2xl shadow-[0_0_25px_rgba(244,63,94,0.2)] mb-2 flex items-center gap-4 min-w-[200px]"
+                  >
+                    <div className="flex gap-1.5 items-center">
+                      {[1, 2, 3, 4].map(i => (
+                        <motion.div 
+                          key={i}
+                          animate={{ 
+                            height: [10, 24, 10],
+                            backgroundColor: ['oklch(0.7 0.15 220)', 'oklch(0.5 0.2 250)', 'oklch(0.7 0.15 220)']
+                          }}
+                          transition={{ 
+                            duration: 0.6, 
+                            repeat: Infinity, 
+                            delay: i * 0.15,
+                            ease: "easeInOut"
+                          }}
+                          className="w-1.5 rounded-full"
+                        />
+                      ))}
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-bold text-primary">Listening...</p>
+                      <p className="text-[10px] text-muted-foreground">Try "Add task..."</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              <Button 
+                size="lg" 
+                className={`h-16 w-16 rounded-full shadow-2xl transition-all duration-300 three-d-card ${isListening ? 'bg-destructive hover:bg-destructive/90 scale-110 border-4 border-rose-500' : 'bg-primary hover:bg-primary/90'}`}
+                onClick={toggleVoice}
+              >
+                <div className="three-d-inner">
+                  {isListening ? <X size={28} /> : <Mic size={28} />}
+                </div>
+              </Button>
+            </div>
+
             <div className="lightning-border rounded-3xl h-full p-1.5 shadow-2xl overflow-hidden">
               <div className="lightning-effect" />
               <div className="bg-background h-full rounded-[20px] overflow-hidden">
@@ -556,22 +608,22 @@ export default function App() {
                   >
                     <motion.div 
                       variants={{
-                        hidden: { opacity: 0, y: 20 },
-                        visible: { opacity: 1, y: 0 }
+                        hidden: { opacity: 0 },
+                        visible: { opacity: 1 }
                       }}
                       className="grid grid-cols-1 md:grid-cols-3 gap-8"
                     >
-                      <Card className="md:col-span-2 border-none shadow-2xl bg-gradient-to-br from-primary/20 via-card/80 to-card/50 backdrop-blur-xl relative group border border-white/10 three-d-card overflow-hidden">
+                      <Card className="md:col-span-2 border-none shadow-2xl bg-gradient-to-br from-primary/20 via-card/80 to-card/50 backdrop-blur-xl relative group border border-white/10 overflow-hidden">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(var(--primary),0.15),transparent)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                        <CardHeader className="three-d-inner pt-12 pb-6 px-8 md:px-16">
+                        <CardHeader className="pt-12 pb-6 px-8 md:px-16">
                           <CardTitle className="flex items-center gap-5 text-3xl md:text-4xl font-heading font-bold tracking-tight text-foreground">
-                            Welcome to Pandior <Sparkles className="text-primary animate-pulse" size={32} />
+                            Welcome to Pandior <Sparkles className="text-primary" size={32} />
                           </CardTitle>
                           <CardDescription className="text-lg md:text-xl text-muted-foreground/90 font-medium mt-3">
                             You have {upcomingEvents.length} events scheduled for today.
                           </CardDescription>
                         </CardHeader>
-                        <CardContent className="three-d-inner px-8 md:px-16 pb-12">
+                        <CardContent className="px-8 md:px-16 pb-12">
                       <div className="flex items-center gap-8">
                         <div className="flex-1">
                           <p className="text-base text-muted-foreground mb-6 italic leading-relaxed">
@@ -601,8 +653,8 @@ export default function App() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-none shadow-xl glass-card three-d-card">
-                    <CardHeader className="three-d-inner">
+                  <Card className="border-none shadow-xl glass-card">
+                    <CardHeader>
                       <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-primary/80">System Stats</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -651,13 +703,13 @@ export default function App() {
 
                     <motion.div 
                       variants={{
-                        hidden: { opacity: 0, y: 20 },
-                        visible: { opacity: 1, y: 0 }
+                        hidden: { opacity: 0 },
+                        visible: { opacity: 1 }
                       }}
                       className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                     >
-                      <Card className="lg:col-span-2 border-none shadow-xl glass-card three-d-card">
-                        <CardHeader className="flex flex-row items-center justify-between three-d-inner">
+                      <Card className="lg:col-span-2 border-none shadow-xl glass-card">
+                        <CardHeader className="flex flex-row items-center justify-between">
                           <CardTitle className="text-xl font-heading font-bold">Upcoming Events</CardTitle>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
@@ -677,7 +729,7 @@ export default function App() {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ type: "spring", duration: 0.5 }}
-                                    className={`flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 smooth-transition border-l-4 group relative overflow-hidden hover:scale-[1.01] hover:shadow-lg active:scale-[0.98] lightning-border-sm ${
+                                    className={`flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 smooth-transition border-l-4 group relative overflow-hidden active:scale-[0.98] lightning-border-sm ${
                                       event.category === 'work' ? 'lightning-border-work' : 
                                       event.category === 'personal' ? 'lightning-border-personal' : 
                                       'lightning-border-other'
@@ -745,13 +797,13 @@ export default function App() {
 
                       <motion.div 
                         variants={{
-                          hidden: { opacity: 0, y: 20 },
-                          visible: { opacity: 1, y: 0 }
+                          hidden: { opacity: 0 },
+                          visible: { opacity: 1 }
                         }}
                         className="space-y-6"
                       >
-                        <Card className="border-none shadow-xl glass-card three-d-card">
-                      <CardHeader className="three-d-inner">
+                        <Card className="border-none shadow-xl glass-card">
+                      <CardHeader>
                         <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-primary/80">Integrations</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -831,8 +883,8 @@ export default function App() {
                       </CardContent>
                     </Card>
 
-                    <Card className="border-none shadow-xl glass-card three-d-card">
-                      <CardHeader className="three-d-inner">
+                    <Card className="border-none shadow-xl glass-card">
+                      <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
                           <Sparkles size={16} className="text-primary" /> Smart Suggestions
                         </CardTitle>
@@ -851,15 +903,15 @@ export default function App() {
                       </CardContent>
                     </Card>
 
-                    <Card className="border-none shadow-xl glass-card three-d-card">
-                      <CardHeader className="flex flex-row items-center justify-between three-d-inner">
+                    <Card className="border-none shadow-xl glass-card">
+                      <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="text-sm font-bold">Recent Tasks</CardTitle>
                         <Button variant="ghost" size="sm" className="h-auto p-0 text-xs">View All</Button>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3">
                           {tasks.slice(0, 3).map(task => (
-                            <div key={task.id} className="flex items-center gap-3 p-2 rounded-lg border-l-4 smooth-transition hover:bg-muted/30 hover:scale-[1.01] hover:shadow-md active:scale-[0.98]"
+                            <div key={task.id} className="flex items-center gap-3 p-2 rounded-lg border-l-4 smooth-transition hover:bg-muted/30 active:scale-[0.98]"
                               style={{ borderLeftColor: task.completed ? '#22c55e' : 'hsl(var(--primary))' }}
                             >
                               <div 
@@ -911,8 +963,8 @@ export default function App() {
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 glass-card rounded-2xl border border-border flex flex-col shadow-2xl three-d-card">
-                  <div className="grid grid-cols-7 border-b border-border bg-muted/30 three-d-inner">
+                <div className="flex-1 glass-card rounded-2xl border border-border flex flex-col shadow-2xl">
+                  <div className="grid grid-cols-7 border-b border-border bg-muted/30">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                       <div key={day} className="py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         {day}
@@ -972,10 +1024,10 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="md:col-span-2 space-y-4">
                     {tasks.map(task => (
-                      <Card key={task.id} className={`border-none shadow-xl group three-d-card lightning-border-sm ${task.completed ? 'opacity-80' : ''}`}>
+                      <Card key={task.id} className={`border-none shadow-xl group lightning-border-sm ${task.completed ? 'opacity-80' : ''}`}>
                         <div className="relative z-10">
                           <div className={`h-1 w-full ${task.completed ? 'bg-green-500' : 'bg-primary'}`} />
-                          <CardContent className="p-4 flex items-center gap-4 three-d-inner">
+                          <CardContent className="p-4 flex items-center gap-4">
                             <div 
                               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all ${task.completed ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground hover:border-primary'}`}
                               onClick={() => {
@@ -1048,18 +1100,18 @@ export default function App() {
                   </div>
 
                   <div className="space-y-6">
-                    <Card className="border-none shadow-xl glass-card three-d-card">
-                      <CardHeader className="three-d-inner">
+                    <Card className="border-none shadow-xl glass-card">
+                      <CardHeader>
                         <CardTitle className="text-sm font-bold uppercase tracking-wider">File Vault</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4 three-d-inner">
-                        <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-muted/50 smooth-transition cursor-pointer group hover:scale-[1.02] hover:shadow-lg">
+                      <CardContent className="space-y-4">
+                        <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-muted/50 smooth-transition cursor-pointer group">
                           <Upload size={32} className="mx-auto mb-2 text-muted-foreground group-hover:text-primary transition-colors" />
                           <p className="text-xs font-bold">Click to upload or drag & drop</p>
                           <p className="text-[10px] text-muted-foreground mt-1">PDF, DOCX, Images up to 10MB</p>
                         </div>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 smooth-transition cursor-pointer hover:translate-x-1">
+                          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 smooth-transition cursor-pointer">
                             <div className="w-8 h-8 rounded bg-red-100 text-red-600 flex items-center justify-center shadow-md">
                               <FileText size={16} />
                             </div>
@@ -1068,7 +1120,7 @@ export default function App() {
                               <p className="text-[10px] text-muted-foreground">2.4 MB</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 smooth-transition cursor-pointer hover:translate-x-1">
+                          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 smooth-transition cursor-pointer">
                             <div className="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center shadow-md">
                               <FileText size={16} />
                             </div>
@@ -1081,13 +1133,15 @@ export default function App() {
                       </CardContent>
                     </Card>
 
-                    <Card className="border-none shadow-xl bg-primary text-primary-foreground three-d-card">
-                      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <CardHeader className="three-d-inner">
-                        <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-80">AI Tip</CardTitle>
+                    <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.2),transparent)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <CardHeader>
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-90 flex items-center gap-2">
+                          <Sparkles size={16} /> AI Tip
+                        </CardTitle>
                       </CardHeader>
-                      <CardContent className="three-d-inner">
-                        <p className="text-xs leading-relaxed font-medium">
+                      <CardContent>
+                        <p className="text-xs leading-relaxed font-medium opacity-90">
                           Try saying: "Assign a task to review project_spec.pdf by Friday." Pandior will automatically link the file!
                         </p>
                       </CardContent>
@@ -1100,9 +1154,9 @@ export default function App() {
             {activeTab === 'history' && (
               <motion.div 
                 key="history"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="max-w-4xl mx-auto space-y-8 md:px-4"
               >
                 <div className="flex items-center justify-between">
@@ -1113,12 +1167,12 @@ export default function App() {
                 <div className="space-y-4">
                     {pastEvents.length > 0 ? (
                       pastEvents.map(event => (
-                        <Card key={event.id} className={`border-none shadow-xl group bg-muted/20 three-d-card lightning-border-sm ${
+                        <Card key={event.id} className={`border-none shadow-xl group bg-muted/20 lightning-border-sm ${
                           event.category === 'work' ? 'lightning-border-work' : 
                           event.category === 'personal' ? 'lightning-border-personal' : 
                           'lightning-border-other'
                         }`}>
-                          <CardContent className="p-4 flex items-center gap-4 three-d-inner relative z-10">
+                          <CardContent className="p-4 flex items-center gap-4 relative z-10">
                             <div className={`w-12 h-12 rounded-2xl bg-muted flex flex-col items-center justify-center text-muted-foreground shrink-0 shadow-inner ${
                               event.category === 'work' ? 'text-blue-500/50' :
                               event.category === 'personal' ? 'text-purple-500/50' :
@@ -1152,50 +1206,21 @@ export default function App() {
           </div>
         </div>
 
-        {/* Voice Input FAB */}
-        <div className="fixed bottom-24 md:bottom-8 right-8 flex flex-col items-end gap-4 z-30">
-          <AnimatePresence>
-            {isListening && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                className="bg-card border border-border p-4 rounded-2xl shadow-xl mb-2 flex items-center gap-3"
-              >
-                <div className="flex gap-1">
-                  {[1, 2, 3].map(i => (
-                    <motion.div 
-                      key={i}
-                      animate={{ height: [8, 16, 8] }}
-                      transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
-                      className="w-1 bg-primary rounded-full"
-                    />
-                  ))}
-                </div>
-                <p className="text-sm font-medium">Listening...</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          <Button 
-            size="lg" 
-            className={`h-16 w-16 rounded-full shadow-2xl transition-all duration-300 three-d-card ${isListening ? 'bg-destructive hover:bg-destructive/90 scale-110' : 'bg-primary hover:bg-primary/90'}`}
-            onClick={toggleVoice}
-          >
-            <div className="three-d-inner">
-              {isListening ? <X size={28} /> : <Mic size={28} />}
-            </div>
-          </Button>
-        </div>
-
         {/* Mobile Bottom Nav */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-lg border-t border-border px-6 py-3 flex items-center justify-between z-40">
-          <MobileNavItem icon={<LayoutDashboard size={20} />} label="Home" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <MobileNavItem icon={<CalendarIcon size={20} />} label="Calendar" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
-          <div className="w-12" /> {/* Spacer for FAB */}
-          <MobileNavItem icon={<CheckSquare size={20} />} label="Tasks" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
-          <MobileNavItem icon={<History size={20} />} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
-          <MobileNavItem icon={<Settings size={20} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border px-4 py-2 flex items-center justify-between z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+          <MobileNavItem icon={<LayoutDashboard size={18} />} label="Home" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+          <MobileNavItem icon={<CalendarIcon size={18} />} label="Calendar" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
+          
+          <motion.button 
+            onClick={toggleVoice}
+            whileTap={{ scale: 0.9 }}
+            className={`flex flex-col items-center justify-center -mt-8 h-14 w-14 rounded-full shadow-lg transition-all duration-300 ${isListening ? 'bg-destructive' : 'bg-primary'} text-white border-4 ${isListening ? 'border-rose-500' : 'border-background'}`}
+          >
+            {isListening ? <X size={24} /> : <Mic size={24} />}
+          </motion.button>
+
+          <MobileNavItem icon={<CheckSquare size={18} />} label="Tasks" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
+          <MobileNavItem icon={<History size={18} />} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
         </div>
       </main>
     </div>
