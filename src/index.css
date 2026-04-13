@@ -111,9 +111,9 @@
 }
 
 @keyframes lightning {
-  0%, 100% { opacity: 0.05; filter: brightness(1); }
-  45%, 55% { opacity: 0.15; filter: brightness(1.2); }
-  50% { opacity: 0.5; filter: brightness(2) drop-shadow(0 0 15px var(--primary)); }
+  0%, 100% { opacity: 0.03; filter: brightness(1); }
+  45%, 55% { opacity: 0.1; filter: brightness(1.1); }
+  50% { opacity: 0.3; filter: brightness(1.5) drop-shadow(0 0 10px var(--primary)); }
 }
 
 :root .lightning-effect {
@@ -136,7 +136,7 @@
   background: linear-gradient(var(--card), var(--card)) padding-box,
               linear-gradient(90deg, var(--primary), var(--ring), var(--primary)) border-box;
   background-size: 200% 100%;
-  animation: border-flow 6s linear infinite;
+  animation: border-flow 8s linear infinite;
   overflow: visible !important;
 }
 
@@ -171,26 +171,28 @@
   }
 
   .three-d-card {
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     transform-style: preserve-3d;
-    perspective: 1200px;
+    perspective: 1500px;
+    will-change: transform, box-shadow;
   }
 
   .three-d-card:hover {
-    transform: translateY(-8px) rotateX(6deg) rotateY(3deg);
+    transform: translateY(-6px) rotateX(4deg) rotateY(2deg);
     box-shadow: 
-      -10px 15px 35px rgba(0,0,0,0.2),
-      0px 10px 20px rgba(0,0,0,0.1),
-      0px 0px 15px var(--primary-foreground);
+      -8px 12px 30px rgba(0,0,0,0.15),
+      0px 8px 15px rgba(0,0,0,0.08),
+      0px 0px 12px var(--primary-foreground);
   }
 
   .three-d-inner {
-    transform: translateZ(15px);
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateZ(10px);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
   }
 
   .three-d-card:hover .three-d-inner {
-    transform: translateZ(30px) scale(1.01);
+    transform: translateZ(25px) scale(1.01);
   }
 
   .lightning-border-sm {
@@ -199,7 +201,7 @@
     background: linear-gradient(var(--card), var(--card)) padding-box,
                 linear-gradient(90deg, var(--primary), var(--ring), var(--primary)) border-box;
     background-size: 200% 100%;
-    animation: border-flow 4s linear infinite;
+    animation: border-flow 6s linear infinite;
   }
 
   .lightning-border-work {
@@ -218,7 +220,7 @@
   }
 
   .glass-card {
-    @apply bg-card/40 backdrop-blur-2xl border border-white/10 shadow-2xl;
+    @apply bg-card/30 backdrop-blur-3xl border border-white/10 shadow-2xl;
   }
 
   .neo-shadow {

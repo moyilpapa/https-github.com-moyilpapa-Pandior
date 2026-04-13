@@ -524,44 +524,70 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 relative pb-24 md:pb-6">
+        <div className="flex-1 overflow-hidden p-4 md:p-6 relative pb-24 md:pb-6">
           <div className="max-w-6xl mx-auto h-full relative">
-            <div className="lightning-border rounded-3xl h-full p-1 shadow-2xl">
+            <div className="lightning-border rounded-3xl h-full p-1.5 shadow-2xl overflow-hidden">
               <div className="lightning-effect" />
-              <div className="bg-background h-full rounded-[calc(var(--radius-3xl)-4px)] overflow-y-auto overflow-x-hidden p-4 md:p-8">
-                <AnimatePresence mode="wait">
-            {activeTab === 'dashboard' && (
-              <motion.div 
-                key="dashboard"
-                initial={{ opacity: 0, y: 30, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -30, scale: 0.98 }}
-                transition={{ type: "spring", damping: 20, stiffness: 100 }}
-                className="space-y-6 max-w-6xl mx-auto"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card className="md:col-span-2 border-none shadow-2xl bg-gradient-to-br from-primary/20 via-card/80 to-card/50 backdrop-blur-xl relative group border border-white/10 three-d-card">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(var(--primary),0.15),transparent)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                    <CardHeader className="three-d-inner">
-                      <CardTitle className="flex items-center gap-3 text-4xl font-heading font-bold tracking-tight text-foreground">
-                        Welcome to Pandior <Sparkles className="text-primary animate-pulse" size={32} />
-                      </CardTitle>
-                      <CardDescription className="text-xl text-muted-foreground/90 font-medium">
-                        You have {upcomingEvents.length} events scheduled for today.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="three-d-inner">
+              <div className="bg-background h-full rounded-[20px] overflow-hidden">
+                <ScrollArea className="h-full w-full">
+                  <div className="p-4 md:p-10 md:px-12">
+                    <AnimatePresence mode="wait">
+                {activeTab === 'dashboard' && (
+                  <motion.div 
+                    key="dashboard"
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={{
+                      hidden: { opacity: 0, y: 30 },
+                      visible: { 
+                        opacity: 1, 
+                        y: 0,
+                        transition: {
+                          staggerChildren: 0.1,
+                          type: "spring",
+                          damping: 25,
+                          stiffness: 120
+                        }
+                      },
+                      exit: { opacity: 0, y: -30 }
+                    }}
+                    className="space-y-12 max-w-6xl mx-auto"
+                  >
+                    <motion.div 
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0 }
+                      }}
+                      className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                    >
+                      <Card className="md:col-span-2 border-none shadow-2xl bg-gradient-to-br from-primary/20 via-card/80 to-card/50 backdrop-blur-xl relative group border border-white/10 three-d-card overflow-hidden">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(var(--primary),0.15),transparent)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                        <CardHeader className="three-d-inner pt-12 pb-6 px-8 md:px-16">
+                          <CardTitle className="flex items-center gap-5 text-3xl md:text-4xl font-heading font-bold tracking-tight text-foreground">
+                            Welcome to Pandior <Sparkles className="text-primary animate-pulse" size={32} />
+                          </CardTitle>
+                          <CardDescription className="text-lg md:text-xl text-muted-foreground/90 font-medium mt-3">
+                            You have {upcomingEvents.length} events scheduled for today.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="three-d-inner px-8 md:px-16 pb-12">
                       <div className="flex items-center gap-8">
                         <div className="flex-1">
                           <p className="text-base text-muted-foreground mb-6 italic leading-relaxed">
                             "The best way to predict the future is to schedule it. You're on a {streak} day streak!"
                           </p>
-                          <Button 
-                            className="rounded-full px-10 py-6 text-lg font-bold shadow-2xl shadow-primary/30 hover:scale-105 smooth-transition active:scale-95 bg-primary text-primary-foreground border-b-4 border-primary/50"
-                            onClick={() => setActiveTab('calendar')}
+                          <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                           >
-                            View Schedule
-                          </Button>
+                            <Button 
+                              className="rounded-full px-10 py-6 text-lg font-bold shadow-2xl shadow-primary/30 smooth-transition bg-primary text-primary-foreground border-b-4 border-primary/50"
+                              onClick={() => setActiveTab('calendar')}
+                            >
+                              View Schedule
+                            </Button>
+                          </motion.div>
                         </div>
                         <div className="hidden sm:block">
                           <motion.div
@@ -621,98 +647,110 @@ export default function App() {
                       </Button>
                     </CardContent>
                   </Card>
-                </div>
+                </motion.div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <Card className="lg:col-span-2 border-none shadow-xl glass-card three-d-card">
-                    <CardHeader className="flex flex-row items-center justify-between three-d-inner">
-                      <CardTitle className="text-xl font-heading font-bold">Upcoming Events</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
-                          {upcomingEvents.length} Scheduled
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <AnimatePresence initial={false} mode="popLayout">
-                          {upcomingEvents.length > 0 ? (
-                            upcomingEvents.map((event) => (
-                              <motion.div
-                                key={event.id}
-                                layout
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ type: "spring", duration: 0.5 }}
-                                className={`flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 smooth-transition border-l-4 group relative overflow-hidden hover:scale-[1.01] hover:shadow-lg active:scale-[0.98] lightning-border-sm ${
-                                  event.category === 'work' ? 'lightning-border-work' : 
-                                  event.category === 'personal' ? 'lightning-border-personal' : 
-                                  'lightning-border-other'
-                                }`}
-                              >
-                                <div className="flex items-center gap-4 relative z-10">
-                                  <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center shadow-lg ${
-                                    event.category === 'work' ? 'bg-blue-500/20 text-blue-500 shadow-blue-500/10' :
-                                    event.category === 'personal' ? 'bg-purple-500/20 text-purple-500 shadow-purple-500/10' :
-                                    'bg-orange-500/20 text-orange-500 shadow-orange-500/10'
-                                  }`}>
-                                    <span className="text-[10px] font-bold uppercase leading-none">{format(event.start, 'MMM')}</span>
-                                    <span className="text-lg font-bold leading-none">{format(event.start, 'dd')}</span>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[200px] sm:max-w-xs">{event.title}</h4>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                      <span>{format(event.start, 'h:mm a')}</span>
-                                      <span>•</span>
-                                      <Badge variant="outline" className="h-4 text-[10px] px-1 capitalize border-muted-foreground/20">{event.category}</Badge>
-                                      {connectedAccounts.google && (
-                                        <span className="text-primary flex items-center gap-1 ml-1">
-                                          <Video size={12} /> Meet
-                                        </span>
-                                      )}
+                    <motion.div 
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0 }
+                      }}
+                      className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+                    >
+                      <Card className="lg:col-span-2 border-none shadow-xl glass-card three-d-card">
+                        <CardHeader className="flex flex-row items-center justify-between three-d-inner">
+                          <CardTitle className="text-xl font-heading font-bold">Upcoming Events</CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
+                              {upcomingEvents.length} Scheduled
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <AnimatePresence initial={false} mode="popLayout">
+                              {upcomingEvents.length > 0 ? (
+                                upcomingEvents.map((event) => (
+                                  <motion.div
+                                    key={event.id}
+                                    layout
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ type: "spring", duration: 0.5 }}
+                                    className={`flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 smooth-transition border-l-4 group relative overflow-hidden hover:scale-[1.01] hover:shadow-lg active:scale-[0.98] lightning-border-sm ${
+                                      event.category === 'work' ? 'lightning-border-work' : 
+                                      event.category === 'personal' ? 'lightning-border-personal' : 
+                                      'lightning-border-other'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-4 relative z-10">
+                                      <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center shadow-lg ${
+                                        event.category === 'work' ? 'bg-blue-500/20 text-blue-500 shadow-blue-500/10' :
+                                        event.category === 'personal' ? 'bg-purple-500/20 text-purple-500 shadow-purple-500/10' :
+                                        'bg-orange-500/20 text-orange-500 shadow-orange-500/10'
+                                      }`}>
+                                        <span className="text-[10px] font-bold uppercase leading-none">{format(event.start, 'MMM')}</span>
+                                        <span className="text-lg font-bold leading-none">{format(event.start, 'dd')}</span>
+                                      </div>
+                                      <div>
+                                        <h4 className="font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[200px] sm:max-w-xs">{event.title}</h4>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                          <span>{format(event.start, 'h:mm a')}</span>
+                                          <span>•</span>
+                                          <Badge variant="outline" className="h-4 text-[10px] px-1 capitalize border-muted-foreground/20">{event.category}</Badge>
+                                          {connectedAccounts.google && (
+                                            <span className="text-primary flex items-center gap-1 ml-1">
+                                              <Video size={12} /> Meet
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
                                     </div>
+                                    <div className="flex items-center gap-2 relative z-10">
+                                      {connectedAccounts.google && (
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="rounded-full h-8 text-[10px] border-primary/20 hover:bg-primary/10 hidden sm:flex"
+                                          onClick={() => toast.info("Joining Google Meet...")}
+                                        >
+                                          Join
+                                        </Button>
+                                      )}
+                                      <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <ChevronRight size={18} />
+                                      </Button>
+                                    </div>
+                                  </motion.div>
+                                ))
+                              ) : (
+                                <motion.div 
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className="py-12 text-center"
+                                >
+                                  <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CalendarIcon className="text-muted-foreground/50" size={32} />
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-2 relative z-10">
-                                  {connectedAccounts.google && (
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="rounded-full h-8 text-[10px] border-primary/20 hover:bg-primary/10 hidden sm:flex"
-                                      onClick={() => toast.info("Joining Google Meet...")}
-                                    >
-                                      Join
-                                    </Button>
-                                  )}
-                                  <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <ChevronRight size={18} />
+                                  <p className="text-muted-foreground">No upcoming events scheduled.</p>
+                                  <Button variant="link" className="text-primary mt-2" onClick={() => setActiveTab('calendar')}>
+                                    Schedule something new
                                   </Button>
-                                </div>
-                              </motion.div>
-                            ))
-                          ) : (
-                            <motion.div 
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className="py-12 text-center"
-                            >
-                              <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <CalendarIcon className="text-muted-foreground/50" size={32} />
-                              </div>
-                              <p className="text-muted-foreground">No upcoming events scheduled.</p>
-                              <Button variant="link" className="text-primary mt-2" onClick={() => setActiveTab('calendar')}>
-                                Schedule something new
-                              </Button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </CardContent>
-                  </Card>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                  <div className="space-y-6">
-                    <Card className="border-none shadow-xl glass-card three-d-card">
+                      <motion.div 
+                        variants={{
+                          hidden: { opacity: 0, y: 20 },
+                          visible: { opacity: 1, y: 0 }
+                        }}
+                        className="space-y-6"
+                      >
+                        <Card className="border-none shadow-xl glass-card three-d-card">
                       <CardHeader className="three-d-inner">
                         <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-primary/80">Integrations</CardTitle>
                       </CardHeader>
@@ -848,8 +886,8 @@ export default function App() {
                         </div>
                       </CardContent>
                     </Card>
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
               </motion.div>
             )}
 
@@ -859,10 +897,10 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className="h-full flex flex-col"
+                className="h-full flex flex-col space-y-6 md:px-4"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-heading font-bold">{format(currentDate, 'MMMM yyyy')}</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-3xl font-heading font-bold md:ml-2">{format(currentDate, 'MMMM yyyy')}</h2>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
                       <ChevronLeft size={20} />
@@ -894,10 +932,10 @@ export default function App() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="max-w-4xl mx-auto space-y-6"
+                className="max-w-4xl mx-auto space-y-8 md:px-4"
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-heading font-bold">Tasks & Files</h2>
+                  <h2 className="text-3xl font-heading font-bold md:ml-2">Tasks & Files</h2>
                   <Dialog>
                     <DialogTrigger render={<Button className="rounded-full gap-2 three-d-card"><Plus size={18} className="three-d-inner" /> <span className="three-d-inner">Add Task</span></Button>} />
                     <DialogContent className="glass-card">
@@ -1065,10 +1103,10 @@ export default function App() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="max-w-4xl mx-auto space-y-6"
+                className="max-w-4xl mx-auto space-y-8 md:px-4"
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-heading font-bold">Event History</h2>
+                  <h2 className="text-3xl font-heading font-bold md:ml-2">Event History</h2>
                   <Badge variant="outline" className="rounded-full">{pastEvents.length} Past Events</Badge>
                 </div>
                 
@@ -1106,7 +1144,9 @@ export default function App() {
                 </div>
               </motion.div>
             )}
-                </AnimatePresence>
+                    </AnimatePresence>
+                  </div>
+                </ScrollArea>
               </div>
             </div>
           </div>
@@ -1164,22 +1204,26 @@ export default function App() {
 
 function MobileNavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button 
+    <motion.button 
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 smooth-transition ${active ? 'text-primary scale-105' : 'text-muted-foreground hover:scale-[1.02]'}`}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      className={`flex flex-col items-center gap-1 smooth-transition ${active ? 'text-primary' : 'text-muted-foreground'}`}
     >
       <div className={`p-1 rounded-lg transition-colors duration-150 ${active ? 'bg-primary/10' : ''}`}>
         {icon}
       </div>
       <span className="text-[10px] font-medium">{label}</span>
-    </button>
+    </motion.button>
   );
 }
 
 function NavItem({ icon, label, active, collapsed, onClick }: { icon: React.ReactNode, label: string, active: boolean, collapsed: boolean, onClick: () => void }) {
   return (
-    <button 
+    <motion.button 
       onClick={onClick}
+      whileHover={{ x: 4 }}
+      whileTap={{ scale: 0.98 }}
       className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl smooth-transition group relative three-d-card ${active ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'}`}
     >
       {active && (
@@ -1197,7 +1241,7 @@ function NavItem({ icon, label, active, collapsed, onClick }: { icon: React.Reac
         {icon}
       </div>
       {!collapsed && <span className="relative z-10 font-bold text-sm tracking-tight three-d-inner">{label}</span>}
-    </button>
+    </motion.button>
   );
 }
 
