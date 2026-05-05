@@ -26,7 +26,12 @@ import {
   Sun,
   Moon,
   Video,
-  Trash2
+  Trash2,
+  Globe,
+  Files,
+  Clock,
+  Check,
+  Download
 } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
@@ -362,34 +367,46 @@ export default function App() {
     .sort((a, b) => b.start.getTime() - a.start.getTime());
 
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden relative">
       <Toaster position="top-right" />
+      
+      {/* Dynamic Clock Background */}
+      <ClockBackground theme={theme} />
       
       {/* Sidebar */}
       <motion.aside 
         initial={false}
         animate={{ 
-          width: isSidebarOpen ? 260 : 80,
-          x: (window.innerWidth < 768 && !isSidebarOpen) ? -260 : 0
+          width: isSidebarOpen ? 280 : 80,
+          x: (window.innerWidth < 768 && !isSidebarOpen) ? -280 : 0
         }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className={`fixed md:relative h-full border-r border-border bg-card flex flex-col z-50`}
+        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+        className={`fixed md:relative h-full border-r border-border bg-card/60 backdrop-blur-3xl flex flex-col z-50`}
       >
         {/* Mobile Overlay */}
         {isSidebarOpen && (
           <div 
-            className="md:hidden fixed inset-0 bg-black/50 z-[-1]" 
+            className="md:hidden fixed inset-0 bg-background/60 backdrop-blur-sm z-[-1]" 
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.4)]">
-            <Sparkles size={20} />
+        
+        <div className="p-8 flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center text-primary border border-primary/20">
+            <Sparkles size={24} className="animate-pulse" />
           </div>
-          {isSidebarOpen && <h1 className="font-branding text-3xl tracking-wider text-primary drop-shadow-sm">Pandior</h1>}
+          {isSidebarOpen && (
+            <motion.h1 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="font-branding text-3xl tracking-tight text-foreground"
+            >
+              Pandior
+            </motion.h1>
+          )}
         </div>
 
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-4 space-y-2 mt-4">
           <NavItem 
             icon={<LayoutDashboard size={20} />} 
             label="Dashboard" 
@@ -412,26 +429,50 @@ export default function App() {
             onClick={() => setActiveTab('tasks')}
           />
           <NavItem 
+            icon={<Globe size={20} />} 
+            label="File" 
+            active={activeTab === 'files'} 
+            collapsed={!isSidebarOpen}
+            onClick={() => setActiveTab('files')}
+          />
+          <NavItem 
             icon={<History size={20} />} 
-            label="History" 
+            label="Activity" 
             active={activeTab === 'history'} 
             collapsed={!isSidebarOpen}
             onClick={() => setActiveTab('history')}
           />
         </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-2 py-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            {isSidebarOpen && (
-              <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium truncate">Jedi Amos</p>
-                <p className="text-xs text-muted-foreground truncate">jediamos2@gmail.com</p>
-              </div>
-            )}
+        <div className="p-6">
+          <div className={`p-4 rounded-3xl bg-muted/30 border border-border/50 flex flex-col gap-4 ${!isSidebarOpen ? 'items-center p-2' : ''}`}>
+             <div className="flex items-center gap-3 w-full">
+                <Avatar className="h-10 w-10 border border-border">
+                  <AvatarImage src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100" />
+                  <AvatarFallback className="bg-primary/10 text-primary">JD</AvatarFallback>
+                </Avatar>
+                {isSidebarOpen && (
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-xs font-bold leading-none">Jedi Amos</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 truncate">Pro Planner</p>
+                  </div>
+                )}
+             </div>
+             {isSidebarOpen && (
+               <div className="space-y-2">
+                  <div className="flex justify-between items-center text-[10px] uppercase font-bold text-muted-foreground">
+                    <span>Progress</span>
+                    <span>Lvl {level}</span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${xp % 100}%` }}
+                      className="h-full bg-primary"
+                    />
+                  </div>
+               </div>
+             )}
           </div>
         </div>
       </motion.aside>
@@ -439,509 +480,259 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative">
         {/* Header */}
-        <header className="h-16 border-bottom border-border flex items-center justify-between px-4 md:px-6 bg-background/80 backdrop-blur-md sticky top-0 z-50">
-          <div className="flex items-center gap-2 md:gap-4 flex-1">
-            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:flex">
+        <header className="h-20 flex items-center justify-between px-6 md:px-10 z-50">
+          <div className="flex items-center gap-6">
+            <Button 
+               variant="ghost" 
+               size="icon" 
+               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+               className="hover:bg-muted/50 rounded-xl"
+            >
               <Menu size={20} />
             </Button>
             
-            <div className="flex-1 flex items-center gap-2">
-              <div className={`relative max-w-md w-full ${isMobileSearchOpen ? 'flex' : 'hidden md:block'}`}>
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input 
-                  placeholder="Search..." 
-                  className="pl-10 bg-muted/50 border-none focus-visible:ring-1 w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && searchQuery.trim()) {
-                      if (searchQuery.toLowerCase().includes('?') || searchQuery.toLowerCase().startsWith('how') || searchQuery.toLowerCase().startsWith('what')) {
-                        toast.loading("Asking Pandior AI...");
-                        try {
-                          const result = await parseNaturalLanguageInput(searchQuery, new Date().toISOString());
-                          handleAIResult(result);
-                          setSearchQuery('');
-                          setIsMobileSearchOpen(false);
-                        } catch (error) {
-                          toast.error("AI Assistant is currently busy.");
-                        }
-                      }
+            <div className={`relative max-w-sm w-full transition-all duration-300 ${isMobileSearchOpen ? 'fixed inset-x-4 top-4 z-[60] bg-background p-4 rounded-2xl shadow-2xl border' : 'hidden md:flex'}`}>
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              <Input 
+                placeholder="Talk to Pandior AI..." 
+                className={`pl-12 bg-muted/40 border-none h-12 rounded-2xl ring-offset-transparent focus-visible:ring-primary/20 ${isMobileSearchOpen ? 'h-14 text-lg' : ''}`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    toast.loading("Pandior AI is thinking...");
+                    try {
+                      const result = await parseNaturalLanguageInput(searchQuery, new Date().toISOString());
+                      handleAIResult(result);
+                      setSearchQuery('');
+                      setIsMobileSearchOpen(false);
+                    } catch (error) {
+                      toast.error("Assistant busy. Try again.");
                     }
-                  }}
-                />
-                {isMobileSearchOpen && (
-                  <Button variant="ghost" size="icon" className="md:hidden ml-1" onClick={() => setIsMobileSearchOpen(false)}>
-                    <X size={18} />
-                  </Button>
-                )}
-              </div>
-              
-              {!isMobileSearchOpen && (
-                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileSearchOpen(true)}>
-                  <Search size={20} />
+                  }
+                }}
+              />
+              {isMobileSearchOpen && (
+                <Button variant="ghost" size="icon" className="md:hidden ml-2" onClick={() => setIsMobileSearchOpen(false)}>
+                  <X size={20} />
                 </Button>
               )}
             </div>
           </div>
           
-          <div className={`flex items-center gap-2 md:gap-3 ${isMobileSearchOpen ? 'hidden sm:flex' : 'flex'}`}>
-            <div className="hidden lg:flex flex-col items-end mr-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{format(new Date(), 'EEEE')}</span>
-              <span className="text-sm font-bold">{format(new Date(), 'MMMM d, yyyy')}</span>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-muted/40 rounded-2xl border border-border/50">
+              <Flame size={16} className="text-rose-500 animate-bounce" />
+              <span className="text-sm font-bold tracking-tight">{streak} Daily Streak</span>
             </div>
-            <div className="flex items-center gap-1 px-2 md:px-3 py-1 bg-primary/10 rounded-full text-primary font-medium text-[10px] md:text-sm">
-              <Flame size={14} className="fill-primary md:w-4 md:h-4" />
-              <span>{streak} Days</span>
+
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+                className="rounded-xl hover:bg-muted/50"
+              >
+                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              </Button>
+              <Button variant="ghost" size="icon" className="relative rounded-xl hover:bg-muted/50">
+                <Bell size={20} />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-4 ring-background"></span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setActiveTab('settings')}
+                className={`rounded-xl hover:bg-muted/50 ${activeTab === 'settings' ? 'bg-primary/10 text-primary' : ''}`}
+              >
+                <Settings size={20} />
+              </Button>
             </div>
-            <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 bg-secondary rounded-full text-secondary-foreground font-medium text-[10px] md:text-sm">
-              <Trophy size={14} className="text-yellow-500 md:w-4 md:h-4" />
-              <span>Lvl {level}</span>
-              <div className="hidden sm:block w-12 h-1.5 bg-muted rounded-full overflow-hidden ml-1">
-                <div 
-                  className="h-full bg-primary transition-all duration-500" 
-                  style={{ width: `${(xp % 100)}%` }}
-                />
-              </div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
-              className="relative"
-            >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border-2 border-background"></span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setActiveTab('settings')}
-              className={activeTab === 'settings' ? 'text-primary bg-primary/10' : ''}
-            >
-              <Settings size={20} />
-            </Button>
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-hidden p-4 md:p-6 relative pb-24 md:pb-6">
-          <div className="max-w-6xl mx-auto h-full relative">
-            {/* Voice Input FAB (Desktop) */}
-            <div className="hidden md:flex absolute bottom-6 right-6 flex-col items-end gap-4 z-30">
-              <AnimatePresence>
-                {isListening && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.8 }}
-                    className="bg-card/95 backdrop-blur-xl border border-rose-500/40 p-4 rounded-2xl shadow-[0_0_25px_rgba(244,63,94,0.2)] mb-2 flex items-center gap-4 min-w-[200px]"
-                  >
-                    <div className="flex gap-1.5 items-center">
-                      {[1, 2, 3, 4].map(i => (
-                        <motion.div 
-                          key={i}
-                          animate={{ 
-                            height: [10, 24, 10],
-                            backgroundColor: ['oklch(0.7 0.15 220)', 'oklch(0.5 0.2 250)', 'oklch(0.7 0.15 220)']
-                          }}
-                          transition={{ 
-                            duration: 0.6, 
-                            repeat: Infinity, 
-                            delay: i * 0.15,
-                            ease: "easeInOut"
-                          }}
-                          className="w-1.5 rounded-full"
-                        />
-                      ))}
-                    </div>
-                    <div className="flex flex-col">
-                      <p className="text-sm font-bold text-primary">Listening...</p>
-                      <p className="text-[10px] text-muted-foreground">Try "Add task..."</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              
-              <Button 
-                size="lg" 
-                className={`h-16 w-16 rounded-full shadow-2xl transition-all duration-300 three-d-card ${isListening ? 'bg-destructive hover:bg-destructive/90 scale-110 border-4 border-rose-500' : 'bg-primary hover:bg-primary/90'}`}
-                onClick={toggleVoice}
-              >
-                <div className="three-d-inner">
-                  {isListening ? <X size={28} /> : <Mic size={28} />}
-                </div>
-              </Button>
-            </div>
+        <div className="flex-1 overflow-hidden p-4 md:p-10 relative">
+          <div className="max-w-7xl mx-auto h-full relative">
+            
+            {/* Voice Control Status */}
+            <AnimatePresence>
+              {isListening && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -20, x: '-50%' }}
+                  animate={{ opacity: 1, y: 0, x: '-50%' }}
+                  exit={{ opacity: 0, y: -20, x: '-50%' }}
+                  className="fixed top-8 left-1/2 z-[100] px-8 py-4 bg-primary text-primary-foreground rounded-3xl shadow-2xl flex items-center gap-4 border border-white/20"
+                >
+                  <div className="flex gap-1.5 items-center">
+                    {[1, 2, 3, 4].map(i => (
+                      <motion.div 
+                        key={i}
+                        animate={{ height: [12, 28, 12] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                        className="w-1.5 bg-white/80 rounded-full"
+                      />
+                    ))}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black uppercase tracking-widest leading-none">Awaiting Command</span>
+                    <span className="text-[10px] opacity-60 mt-0.5">Pandior Intelligence active</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div className="lightning-border rounded-3xl h-full p-1.5 shadow-2xl overflow-hidden">
-              <div className="lightning-effect" />
-              <div className="bg-background h-full rounded-[20px] overflow-hidden">
-                <ScrollArea className="h-full w-full">
-                  <div className="p-4 md:p-10 md:px-12">
-                    <AnimatePresence mode="wait">
+            <ScrollArea className="h-full w-full pr-2">
+              <div className="pb-32 sm:pb-10">
+                <AnimatePresence mode="wait">
                 {activeTab === 'dashboard' && (
                   <motion.div 
                     key="dashboard"
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    variants={{
-                      hidden: { opacity: 0, y: 30 },
-                      visible: { 
-                        opacity: 1, 
-                        y: 0,
-                        transition: {
-                          staggerChildren: 0.1,
-                          type: "spring",
-                          damping: 25,
-                          stiffness: 120
-                        }
-                      },
-                      exit: { opacity: 0, y: -30 }
-                    }}
-                    className="space-y-12 max-w-6xl mx-auto"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="bento-grid"
                   >
-                    <motion.div 
-                      variants={{
-                        hidden: { opacity: 0 },
-                        visible: { opacity: 1 }
-                      }}
-                      className="grid grid-cols-1 md:grid-cols-3 gap-8"
-                    >
-                      <Card className="md:col-span-2 border-none shadow-2xl bg-gradient-to-br from-primary/20 via-card/80 to-card/50 backdrop-blur-xl relative group border border-white/10 overflow-hidden">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(var(--primary),0.15),transparent)] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                        <CardHeader className="pt-12 pb-6 px-8 md:px-16">
-                          <CardTitle className="flex items-center gap-5 text-3xl md:text-4xl font-heading font-bold tracking-tight text-foreground">
-                            Welcome to Pandior <Sparkles className="text-primary" size={32} />
-                          </CardTitle>
-                          <CardDescription className="text-lg md:text-xl text-muted-foreground/90 font-medium mt-3">
-                            You have {upcomingEvents.length} events scheduled for today.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-8 md:px-16 pb-12">
-                      <div className="flex items-center gap-8">
-                        <div className="flex-1">
-                          <p className="text-base text-muted-foreground mb-6 italic leading-relaxed">
-                            "The best way to predict the future is to schedule it. You're on a {streak} day streak!"
-                          </p>
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Button 
-                              className="rounded-full px-10 py-6 text-lg font-bold shadow-2xl shadow-primary/30 smooth-transition bg-primary text-primary-foreground border-b-4 border-primary/50"
-                              onClick={() => setActiveTab('calendar')}
-                            >
-                              View Schedule
-                            </Button>
-                          </motion.div>
-                        </div>
-                        <div className="hidden sm:block">
-                          <motion.div
-                            animate={{ rotate: [0, 10, -10, 0], y: [0, -10, 0] }}
-                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                          >
-                            <Trophy size={100} className="text-primary/20 drop-shadow-[0_0_20px_rgba(var(--primary),0.3)]" />
-                          </motion.div>
-                        </div>
+                    {/* Welcome Card */}
+                    <div className="col-span-12 lg:col-span-8 p-10 rounded-3xl glass-card relative overflow-hidden group min-h-[340px] flex flex-col justify-center">
+                      <div className="absolute top-0 right-0 p-12 text-primary/5 group-hover:text-primary/10 smooth-transition">
+                        <Sparkles size={180} />
                       </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-none shadow-xl glass-card">
-                    <CardHeader>
-                      <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-primary/80">System Stats</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-end">
-                          <span className="text-xs font-medium text-muted-foreground">Task Completion</span>
-                          <span className="text-lg font-mono font-bold text-primary">80%</span>
-                        </div>
-                        <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: '80%' }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className="bg-primary h-full rounded-full shadow-[0_0_10px_var(--primary)]" 
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-end">
-                          <span className="text-xs font-medium text-muted-foreground">Efficiency</span>
-                          <span className="text-lg font-mono font-bold text-primary">+12%</span>
-                        </div>
-                        <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: '92%' }}
-                            transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                            className="bg-primary h-full rounded-full shadow-[0_0_10px_var(--primary)]" 
-                          />
-                        </div>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full text-[10px] h-8 border-primary/20 hover:bg-primary/5 three-d-card"
-                        onClick={() => {
-                          haptics.impact();
-                          toast.success("System Pulse Synchronized");
-                        }}
-                      >
-                        <span className="three-d-inner">Sync System Pulse</span>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                    <motion.div 
-                      variants={{
-                        hidden: { opacity: 0 },
-                        visible: { opacity: 1 }
-                      }}
-                      className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-                    >
-                      <Card className="lg:col-span-2 border-none shadow-xl glass-card">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                          <CardTitle className="text-xl font-heading font-bold">Upcoming Events</CardTitle>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="bg-primary/10 text-primary border-none">
-                              {upcomingEvents.length} Scheduled
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            <AnimatePresence initial={false} mode="popLayout">
-                              {upcomingEvents.length > 0 ? (
-                                upcomingEvents.map((event) => (
-                                  <motion.div
-                                    key={event.id}
-                                    layout
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ type: "spring", duration: 0.5 }}
-                                    className={`flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 smooth-transition border-l-4 group relative overflow-hidden active:scale-[0.98] lightning-border-sm ${
-                                      event.category === 'work' ? 'lightning-border-work' : 
-                                      event.category === 'personal' ? 'lightning-border-personal' : 
-                                      'lightning-border-other'
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-4 relative z-10">
-                                      <div className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center shadow-lg ${
-                                        event.category === 'work' ? 'bg-blue-500/20 text-blue-500 shadow-blue-500/10' :
-                                        event.category === 'personal' ? 'bg-purple-500/20 text-purple-500 shadow-purple-500/10' :
-                                        'bg-orange-500/20 text-orange-500 shadow-orange-500/10'
-                                      }`}>
-                                        <span className="text-[10px] font-bold uppercase leading-none">{format(event.start, 'MMM')}</span>
-                                        <span className="text-lg font-bold leading-none">{format(event.start, 'dd')}</span>
-                                      </div>
-                                      <div>
-                                        <h4 className="font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[200px] sm:max-w-xs">{event.title}</h4>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                          <span>{format(event.start, 'h:mm a')}</span>
-                                          <span>•</span>
-                                          <Badge variant="outline" className="h-4 text-[10px] px-1 capitalize border-muted-foreground/20">{event.category}</Badge>
-                                          {connectedAccounts.google && (
-                                            <span className="text-primary flex items-center gap-1 ml-1">
-                                              <Video size={12} /> Meet
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 relative z-10">
-                                      {connectedAccounts.google && (
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          className="rounded-full h-8 text-[10px] border-primary/20 hover:bg-primary/10 hidden sm:flex"
-                                          onClick={() => toast.info("Joining Google Meet...")}
-                                        >
-                                          Join
-                                        </Button>
-                                      )}
-                                      <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <ChevronRight size={18} />
-                                      </Button>
-                                    </div>
-                                  </motion.div>
-                                ))
-                              ) : (
-                                <motion.div 
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  className="py-12 text-center"
-                                >
-                                  <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CalendarIcon className="text-muted-foreground/50" size={32} />
-                                  </div>
-                                  <p className="text-muted-foreground">No upcoming events scheduled.</p>
-                                  <Button variant="link" className="text-primary mt-2" onClick={() => setActiveTab('calendar')}>
-                                    Schedule something new
-                                  </Button>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <motion.div 
-                        variants={{
-                          hidden: { opacity: 0 },
-                          visible: { opacity: 1 }
-                        }}
-                        className="space-y-6"
-                      >
-                        <Card className="border-none shadow-xl glass-card">
-                      <CardHeader>
-                        <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-primary/80">Integrations</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between p-3 rounded-2xl bg-primary/5 border border-primary/10 group hover:bg-primary/10 smooth-transition">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md">
-                              <img src="https://www.gstatic.com/images/branding/product/2x/meet_2020q4_48dp.png" alt="Google Meet" className="w-6 h-6" referrerPolicy="no-referrer" />
-                            </div>
-                            <div>
-                              <span className="text-sm font-bold block">Google Meet</span>
-                              <span className="text-[10px] text-muted-foreground">{connectedAccounts.google ? 'Connected' : 'Not connected'}</span>
-                            </div>
-                          </div>
-                          <Button 
-                            variant={connectedAccounts.google ? "ghost" : "default"} 
-                            size="sm" 
-                            className="h-8 rounded-full text-[10px]"
-                            onClick={() => setConnectedAccounts(prev => ({...prev, google: !prev.google}))}
-                          >
-                            {connectedAccounts.google ? 'Disconnect' : 'Connect'}
-                          </Button>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-2xl bg-primary/5 border border-primary/10 group hover:bg-primary/10 smooth-transition">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#2D8CFF] flex items-center justify-center shadow-md">
-                              <Video className="text-white" size={20} />
-                            </div>
-                            <div>
-                              <span className="text-sm font-bold block">Zoom</span>
-                              <span className="text-[10px] text-muted-foreground">{connectedAccounts.zoom ? 'Connected' : 'Not connected'}</span>
-                            </div>
-                          </div>
-                          <Button 
-                            variant={connectedAccounts.zoom ? "ghost" : "default"} 
-                            size="sm" 
-                            className="h-8 rounded-full text-[10px]"
-                            onClick={() => setConnectedAccounts(prev => ({...prev, zoom: !prev.zoom}))}
-                          >
-                            {connectedAccounts.zoom ? 'Disconnect' : 'Connect'}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-xl bg-card/50 backdrop-blur-sm border border-white/5">
-                      <CardHeader>
-                        <CardTitle className="text-xs font-bold uppercase tracking-[0.2em] text-primary/80">Native Bridge Status</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/10">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${isNative ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
-                            <span className="text-xs font-medium">Capacitor Runtime</span>
-                          </div>
-                          <Badge variant="outline" className="text-[10px]">{isNative ? 'Active' : 'Web Preview'}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/10">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-xs font-medium">Haptic Engine</span>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-6 text-[10px] px-2"
-                            onClick={() => {
-                              haptics.impact();
-                              toast.info("Haptic feedback triggered");
-                            }}
-                          >
-                            Test
-                          </Button>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed">
-                          Pandior is optimized for Android and Desktop. Native features are simulated in web preview.
+                      <div className="relative z-10">
+                        <Badge className="bg-primary/20 text-primary border-none mb-6 px-4 py-1.5 text-[10px] uppercase tracking-widest font-black">Authorized Access</Badge>
+                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Good Morning, Jedi.</h2>
+                        <p className="text-lg text-muted-foreground/80 max-w-lg leading-relaxed font-medium">
+                          You have {upcomingEvents.length} assignments prioritized for today. 
+                          Your current focus efficiency is at 94% — the highest this week.
                         </p>
-                      </CardContent>
-                    </Card>
+                        <div className="flex items-center gap-4 mt-10">
+                           <Button 
+                             className="rounded-2xl h-14 px-10 text-base font-bold shadow-2xl shadow-primary/30"
+                             onClick={() => setActiveTab('calendar')}
+                           >
+                              Review Deployment
+                           </Button>
+                           <Button 
+                             variant="secondary"
+                             className="rounded-2xl h-14 px-8 text-base font-bold bg-muted/50 border border-border/50"
+                             onClick={toggleVoice}
+                           >
+                              <Mic className="mr-2" size={18} /> Voice Synthesis
+                           </Button>
+                        </div>
+                      </div>
+                    </div>
 
-                    <Card className="border-none shadow-xl glass-card">
-                      <CardHeader>
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                          <Sparkles size={16} className="text-primary" /> Smart Suggestions
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {suggestions.map((s, i) => (
-                          <div key={i} className="p-3 rounded-xl bg-background border border-border space-y-2">
-                            <div className="flex justify-between items-start">
-                              <h5 className="text-sm font-bold">{s.title}</h5>
-                              <Badge variant="secondary" className="text-[10px]">{s.suggestedTime}</Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground leading-relaxed">{s.reason}</p>
-                            <Button variant="link" className="p-0 h-auto text-xs text-primary font-bold">Apply Suggestion</Button>
+                    {/* XP Progress Card */}
+                    <div className="col-span-12 lg:col-span-4 p-8 rounded-3xl glass-card flex flex-col justify-between">
+                       <div>
+                          <div className="flex justify-between items-start mb-8">
+                             <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Progression</h3>
+                             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <Trophy size={20} />
+                             </div>
                           </div>
-                        ))}
-                      </CardContent>
-                    </Card>
+                          <div className="space-y-6">
+                             <div className="space-y-3">
+                                <div className="flex justify-between items-end">
+                                   <span className="text-sm font-bold">Level {level}</span>
+                                   <span className="text-[10px] font-black opacity-40 uppercase tracking-tighter">{(xp % 100)} / 100 XP</span>
+                                </div>
+                                <div className="h-3 bg-muted rounded-full overflow-hidden">
+                                   <motion.div initial={{ width: 0 }} animate={{ width: `${xp % 100}%` }} className="h-full bg-primary" />
+                                </div>
+                             </div>
+                             <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                                <p className="text-[11px] font-medium leading-relaxed italic opacity-80 italic">
+                                   "Precision is the foundation of excellence. Synchronization active."
+                                </p>
+                             </div>
+                          </div>
+                       </div>
+                       <Button 
+                         variant="ghost" 
+                         className="w-full mt-6 rounded-2xl h-12 bg-primary/5 hover:bg-primary/10 border border-primary/10 text-primary font-bold text-xs"
+                       >
+                          View Skill Tree
+                       </Button>
+                    </div>
 
-                    <Card className="border-none shadow-xl glass-card">
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-sm font-bold">Recent Tasks</CardTitle>
-                        <Button variant="ghost" size="sm" className="h-auto p-0 text-xs">View All</Button>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {tasks.slice(0, 3).map(task => (
-                            <div key={task.id} className="flex items-center gap-3 p-2 rounded-lg border-l-4 smooth-transition hover:bg-muted/30 active:scale-[0.98]"
-                              style={{ borderLeftColor: task.completed ? '#22c55e' : 'hsl(var(--primary))' }}
-                            >
-                              <div 
-                                className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors ${task.completed ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'}`}
-                                onClick={() => {
-                                  setTasks(prev => prev.map(t => {
-                                    if (t.id === task.id) {
-                                      const newCompleted = !t.completed;
-                                      if (newCompleted) {
-                                        addXp(20);
-                                        toast.success("+20 XP", { icon: '✨' });
-                                      }
-                                      return { ...t, completed: newCompleted };
-                                    }
-                                    return t;
-                                  }));
-                                }}
-                              >
-                                {task.completed && <CheckSquare size={12} />}
-                              </div>
-                              <span className={`flex-1 text-xs truncate ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</span>
+                    {/* Schedule Summary */}
+                    <div className="col-span-12 lg:col-span-7 p-8 rounded-3xl glass-card">
+                       <div className="flex items-center justify-between mb-10">
+                          <h3 className="text-xl font-bold tracking-tight">Deployment Log</h3>
+                          <Button variant="ghost" size="sm" className="rounded-xl text-primary font-bold" onClick={() => setActiveTab('calendar')}>Sync Full Grid</Button>
+                       </div>
+                       <div className="space-y-1">
+                          {upcomingEvents.slice(0, 3).map(event => (
+                            <div key={event.id} className="p-5 rounded-2xl hover:bg-muted/30 border border-transparent hover:border-border/50 smooth-transition flex gap-6 group">
+                               <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-bold border transition-all duration-300 ${
+                                 event.category === 'work' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                                 event.category === 'personal' ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' :
+                                 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+                               } group-hover:scale-105 group-hover:shadow-lg`}>
+                                  <span className="text-[10px] uppercase leading-none opacity-60 mb-1">{format(event.start, 'MMM')}</span>
+                                  <span className="text-2xl leading-none tracking-tighter">{format(event.start, 'dd')}</span>
+                               </div>
+                               <div className="flex-1 flex flex-col justify-center">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                     <h4 className="font-bold text-lg text-foreground group-hover:text-primary smooth-transition">{event.title}</h4>
+                                     <Badge variant="outline" className="text-[9px] uppercase tracking-wider h-4 px-1.5 bg-background/50">{event.category}</Badge>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground font-semibold">
+                                     <span className="flex items-center gap-1.5"><Clock size={14} /> {format(event.start, 'h:mm a')}</span>
+                                     <span className="opacity-30">•</span>
+                                     <span className="text-[10px] uppercase tracking-widest text-primary/60">Priority Meta</span>
+                                  </div>
+                               </div>
+                               <Button variant="ghost" size="icon" className="self-center rounded-2xl hover:bg-primary/10 hover:text-primary">
+                                  <ChevronRight size={24} />
+                                </Button>
                             </div>
                           ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                          {upcomingEvents.length === 0 && (
+                            <div className="py-20 text-center text-muted-foreground font-medium italic text-sm">Synchronizing new assignments...</div>
+                          )}
+                       </div>
+                    </div>
+
+                    {/* Active Tasks Feed */}
+                    <div className="col-span-12 lg:col-span-5 p-8 rounded-3xl glass-card">
+                       <div className="flex items-center justify-between mb-10">
+                          <h3 className="text-xl font-bold tracking-tight">Active Core</h3>
+                          <Button variant="ghost" size="sm" className="rounded-xl text-primary font-bold" onClick={() => setActiveTab('tasks')}>Queue</Button>
+                       </div>
+                       <div className="space-y-4">
+                          {tasks.slice(0, 4).map(task => (
+                            <div 
+                              key={task.id} 
+                              className="flex items-center gap-5 p-4 rounded-2xl bg-muted/20 hover:bg-muted/40 border border-border/50 smooth-transition group cursor-pointer"
+                              onClick={() => {
+                                setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
+                                if (!task.completed) {
+                                  addXp(20);
+                                  toast.success("+20 XP Synchronized");
+                                }
+                              }}
+                            >
+                               <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${
+                                 task.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20' : 'border-muted-foreground/30 group-hover:border-primary'
+                               }`}>
+                                  {task.completed && <Check size={18} strokeWidth={4} />}
+                               </div>
+                               <div className="flex-1 overflow-hidden">
+                                  <span className={`block font-bold text-sm truncate ${task.completed ? 'line-through text-muted-foreground opacity-50' : 'text-foreground'}`}>
+                                     {task.title}
+                                  </span>
+                                  <span className="text-[10px] uppercase font-black opacity-30 mt-1 block">Sector 07</span>
+                               </div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
                   </motion.div>
-                </motion.div>
-              </motion.div>
-            )}
+                )}
 
             {activeTab === 'calendar' && (
               <motion.div 
@@ -949,24 +740,28 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className="h-full flex flex-col space-y-6 md:px-4"
+                className="h-full flex flex-col space-y-8"
               >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-3xl font-heading font-bold md:ml-2">{format(currentDate, 'MMMM yyyy')}</h2>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
-                      <ChevronLeft size={20} />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <h2 className="text-4xl font-bold tracking-tight">{format(currentDate, 'MMMM yyyy')}</h2>
+                    <p className="text-muted-foreground font-medium mt-1">Showing {events.length} active deployments for this sector.</p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-2xl border border-border/50">
+                    <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 hover:bg-background shadow-sm" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+                      <ChevronLeft size={18} />
                     </Button>
-                    <Button variant="outline" onClick={() => setCurrentDate(new Date())}>Today</Button>
-                    <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
-                      <ChevronRight size={20} />
+                    <Button variant="ghost" className="rounded-xl px-6 h-10 hover:bg-background shadow-sm font-bold text-xs uppercase tracking-widest" onClick={() => setCurrentDate(new Date())}>Current Epoch</Button>
+                    <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 hover:bg-background shadow-sm" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+                      <ChevronRight size={18} />
                     </Button>
                   </div>
                 </div>
-                <div className="flex-1 glass-card rounded-2xl border border-border flex flex-col shadow-2xl">
-                  <div className="grid grid-cols-7 border-b border-border bg-muted/30">
+
+                <div className="flex-1 glass-card rounded-[2.5rem] border border-border/50 flex flex-col overflow-hidden shadow-2xl">
+                  <div className="grid grid-cols-7 border-b border-border/30 bg-muted/20">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <div key={day} className="py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      <div key={day} className="py-5 text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
                         {day}
                       </div>
                     ))}
@@ -981,29 +776,34 @@ export default function App() {
             {activeTab === 'tasks' && (
               <motion.div 
                 key="tasks"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="max-w-4xl mx-auto space-y-8 md:px-4"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="max-w-4xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="text-3xl font-heading font-bold md:ml-2">Tasks & Files</h2>
+                  <div>
+                    <h2 className="text-4xl font-bold tracking-tight">Active Queue</h2>
+                    <p className="text-muted-foreground font-medium mt-1">Manage your tactical objectives and priorities.</p>
+                  </div>
                   <Dialog>
-                    <DialogTrigger render={<Button className="rounded-full gap-2 three-d-card"><Plus size={18} className="three-d-inner" /> <span className="three-d-inner">Add Task</span></Button>} />
-                    <DialogContent className="glass-card">
+                    <DialogTrigger render={<Button className="rounded-2xl h-12 px-6 gap-2 shadow-xl shadow-primary/20" />}>
+                      <Plus size={18} /> <span>New Task</span>
+                    </DialogTrigger>
+                    <DialogContent className="glass-card border border-white/20 rounded-3xl">
                       <DialogHeader>
-                        <DialogTitle>Create New Task</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold tracking-tight">Initialize Objective</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4 py-4">
+                      <div className="space-y-6 py-6">
                         <div className="space-y-2">
-                          <Label htmlFor="task-title">Task Title</Label>
-                          <Input id="task-title" placeholder="e.g., Review contract" />
+                          <Label htmlFor="task-title" className="text-xs font-black uppercase tracking-widest opacity-60">Objective Designation</Label>
+                          <Input id="task-title" placeholder="Define your next target..." className="rounded-xl h-12 bg-muted/30" />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="task-date">Due Date</Label>
-                          <Input id="task-date" type="date" />
+                          <Label htmlFor="task-date" className="text-xs font-black uppercase tracking-widest opacity-60">Target Timeline</Label>
+                          <Input id="task-date" type="date" className="rounded-xl h-12 bg-muted/30" />
                         </div>
-                        <Button className="w-full" onClick={() => {
+                        <Button className="w-full h-14 rounded-2xl font-bold text-lg" onClick={() => {
                           const title = (document.getElementById('task-title') as HTMLInputElement).value;
                           const date = (document.getElementById('task-date') as HTMLInputElement).value;
                           if (title && date) {
@@ -1013,140 +813,135 @@ export default function App() {
                               dueDate: new Date(date),
                               completed: false
                             }]);
-                            toast.success("Task created!");
+                            toast.success("Objective Synchronized");
                           }
-                        }}>Create Task</Button>
+                        }}>Establish Link</Button>
                       </div>
                     </DialogContent>
                   </Dialog>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-2 space-y-4">
-                    {tasks.map(task => (
-                      <Card key={task.id} className={`border-none shadow-xl group lightning-border-sm ${task.completed ? 'opacity-80' : ''}`}>
-                        <div className="relative z-10">
-                          <div className={`h-1 w-full ${task.completed ? 'bg-green-500' : 'bg-primary'}`} />
-                          <CardContent className="p-4 flex items-center gap-4">
-                            <div 
-                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all ${task.completed ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground hover:border-primary'}`}
+                <div className="space-y-4">
+                  {tasks.map(task => (
+                    <motion.div 
+                      key={task.id} 
+                      layout
+                      className={`p-6 rounded-3xl glass-card border border-border/50 smooth-transition group flex items-center gap-6 ${task.completed ? 'opacity-50' : ''}`}
+                    >
+                      <div 
+                        className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${task.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg' : 'border-muted-foreground/30 hover:border-primary group-hover:scale-110'}`}
+                        onClick={() => {
+                          setTasks(prev => prev.map(t => {
+                            if (t.id === task.id) {
+                              const newCompleted = !t.completed;
+                              if (newCompleted) {
+                                addXp(20);
+                                toast.success("+20 XP Synchronized");
+                              }
+                              return { ...t, completed: newCompleted };
+                            }
+                            return t;
+                          }));
+                        }}
+                      >
+                        {task.completed && <Check size={20} strokeWidth={4} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`text-lg font-bold tracking-tight ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</h4>
+                        <div className="flex items-center gap-4 mt-1.5">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
+                            <CalendarIcon size={12} /> {format(task.dueDate, 'MMM d, yyyy')}
+                          </span>
+                          {task.assignedFileId && (
+                            <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[9px] uppercase tracking-tighter h-5">
+                              Linked Visual
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl hover:bg-destructive/10 hover:text-destructive" />}>
+                            <Trash2 size={18} />
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="glass-card border border-white/20 rounded-3xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-xl font-bold">Terminate Objective?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-muted-foreground font-medium">
+                              This will permanently purge "{task.title}" from the active database.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="mt-6">
+                            <AlertDialogCancel className="rounded-xl">Retain</AlertDialogCancel>
+                            <AlertDialogAction 
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                               onClick={() => {
-                                setTasks(prev => prev.map(t => {
-                                  if (t.id === task.id) {
-                                    const newCompleted = !t.completed;
-                                    if (newCompleted) {
-                                      addXp(20);
-                                      toast.success("+20 XP", { icon: '✨' });
-                                    }
-                                    return { ...t, completed: newCompleted };
-                                  }
-                                  return t;
-                                }));
+                                setTasks(prev => prev.filter(t => t.id !== task.id));
+                                toast.success("Data Purged");
                               }}
                             >
-                              {task.completed && <CheckSquare size={14} />}
-                            </div>
-                            <div className="flex-1">
-                              <h4 className={`font-bold ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</h4>
-                              <div className="flex items-center gap-3 mt-1">
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <CalendarIcon size={12} /> {format(task.dueDate, 'MMM d, yyyy')}
-                                </span>
-                                {task.assignedFileId && (
-                                  <Badge variant="secondary" className="text-[10px] gap-1">
-                                    <FileText size={10} /> File Attached
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <AlertDialog>
-                              <AlertDialogTrigger render={
-                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10">
-                                  <Trash2 size={18} />
-                                </Button>
-                              } />
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently delete the task "{task.title}". This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => {
-                                      setTasks(prev => prev.filter(t => t.id !== task.id));
-                                      toast.success("Task deleted");
-                                      haptics.impact();
-                                    }}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </CardContent>
-                        </div>
-                      </Card>
-                    ))}
-                    {tasks.length === 0 && (
-                      <div className="text-center py-12 bg-muted/20 rounded-2xl border-2 border-dashed border-border">
-                        <CheckSquare size={48} className="mx-auto mb-4 text-muted-foreground opacity-20" />
-                        <p className="text-muted-foreground">No tasks yet. Create one or use voice command!</p>
+                              Confirm Purge
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </motion.div>
+                  ))}
+                  {tasks.length === 0 && (
+                    <div className="text-center py-24 bg-muted/10 rounded-[3rem] border-2 border-dashed border-border/50">
+                      <CheckSquare size={64} className="mx-auto mb-6 text-muted-foreground opacity-20" />
+                      <p className="text-muted-foreground font-bold text-lg">No active objectives detected.</p>
+                      <p className="text-muted-foreground/60 text-sm mt-1">Initialize via terminal or voice synthesis.</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'files' && (
+              <motion.div 
+                key="files"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="max-w-5xl mx-auto space-y-8"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-4xl font-bold tracking-tight">Secure Vault</h2>
+                    <p className="text-muted-foreground font-medium mt-1">Your encrypted asset repository and documentation.</p>
+                  </div>
+                  <Button className="rounded-2xl h-12 px-6 gap-2 shadow-xl shadow-primary/20">
+                    <Upload size={18} /> <span>Upload Asset</span>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                    { name: 'sector_alpha.pdf', size: '2.4 MB', type: 'PDF', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
+                    { name: 'tactical_core.zip', size: '15.8 MB', type: 'ARCHIVE', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+                    { name: 'intel_report.docx', size: '45 KB', type: 'DOC', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' },
+                    { name: 'encrypted_comms.pdf', size: '1.2 MB', type: 'PDF', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
+                    { name: 'manifest_v3.json', size: '12 KB', type: 'DATA', color: 'bg-green-500/10 text-green-500 border-green-500/20' }
+                  ].map((file, i) => (
+                    <motion.div 
+                      key={i}
+                      whileHover={{ y: -5 }}
+                      className="p-6 rounded-3xl glass-card border border-border/50 group cursor-pointer relative overflow-hidden"
+                    >
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border mb-6 group-hover:scale-110 smooth-transition ${file.color}`}>
+                        <FileText size={28} />
                       </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-6">
-                    <Card className="border-none shadow-xl glass-card">
-                      <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-wider">File Vault</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-muted/50 smooth-transition cursor-pointer group">
-                          <Upload size={32} className="mx-auto mb-2 text-muted-foreground group-hover:text-primary transition-colors" />
-                          <p className="text-xs font-bold">Click to upload or drag & drop</p>
-                          <p className="text-[10px] text-muted-foreground mt-1">PDF, DOCX, Images up to 10MB</p>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 smooth-transition cursor-pointer">
-                            <div className="w-8 h-8 rounded bg-red-100 text-red-600 flex items-center justify-center shadow-md">
-                              <FileText size={16} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold truncate">project_spec.pdf</p>
-                              <p className="text-[10px] text-muted-foreground">2.4 MB</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 smooth-transition cursor-pointer">
-                            <div className="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center shadow-md">
-                              <FileText size={16} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold truncate">design_assets.zip</p>
-                              <p className="text-[10px] text-muted-foreground">15.8 MB</p>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.2),transparent)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      <CardHeader>
-                        <CardTitle className="text-sm font-bold uppercase tracking-wider opacity-90 flex items-center gap-2">
-                          <Sparkles size={16} /> AI Tip
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-xs leading-relaxed font-medium opacity-90">
-                          Try saying: "Assign a task to review project_spec.pdf by Friday." Pandior will automatically link the file!
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      <h4 className="font-bold truncate text-sm mb-1">{file.name}</h4>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase opacity-40 tracking-tighter">{file.size}</span>
+                        <Badge variant="outline" className="text-[8px] h-4 px-1.5 opacity-60">{file.type}</Badge>
+                      </div>
+                      <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 smooth-transition translate-y-2 group-hover:translate-y-0">
+                         <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg bg-background shadow-sm hover:text-primary"><Download size={14} /></Button>
+                         <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg bg-background shadow-sm hover:text-destructive"><Trash2 size={14} /></Button>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -1154,73 +949,89 @@ export default function App() {
             {activeTab === 'history' && (
               <motion.div 
                 key="history"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="max-w-4xl mx-auto space-y-8 md:px-4"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="max-w-4xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="text-3xl font-heading font-bold md:ml-2">Event History</h2>
-                  <Badge variant="outline" className="rounded-full">{pastEvents.length} Past Events</Badge>
+                  <div>
+                    <h2 className="text-4xl font-bold tracking-tight">Active Logs</h2>
+                    <p className="text-muted-foreground font-medium mt-1">Timeline of completed tactical operations.</p>
+                  </div>
+                  <Badge variant="outline" className="rounded-full px-4 py-1.5 bg-muted/30 border-border/50 font-bold uppercase tracking-widest text-[9px]">
+                    {pastEvents.length} Archives
+                  </Badge>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="relative pl-8 border-l-2 border-border/30 space-y-10 ml-4">
                     {pastEvents.length > 0 ? (
-                      pastEvents.map(event => (
-                        <Card key={event.id} className={`border-none shadow-xl group bg-muted/20 lightning-border-sm ${
-                          event.category === 'work' ? 'lightning-border-work' : 
-                          event.category === 'personal' ? 'lightning-border-personal' : 
-                          'lightning-border-other'
-                        }`}>
-                          <CardContent className="p-4 flex items-center gap-4 relative z-10">
-                            <div className={`w-12 h-12 rounded-2xl bg-muted flex flex-col items-center justify-center text-muted-foreground shrink-0 shadow-inner ${
-                              event.category === 'work' ? 'text-blue-500/50' :
-                              event.category === 'personal' ? 'text-purple-500/50' :
-                              'text-orange-500/50'
-                            }`}>
-                              <span className="text-[10px] font-bold uppercase leading-none">{format(event.start, 'MMM')}</span>
-                              <span className="text-lg font-bold leading-none">{format(event.start, 'dd')}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-muted-foreground truncate">{event.title}</h4>
-                              <p className="text-xs text-muted-foreground/60">{format(event.start, 'MMM d, yyyy')} • {format(event.start, 'h:mm a')}</p>
-                            </div>
-                            <Badge variant="secondary" className="opacity-50 capitalize">{event.category}</Badge>
-                          </CardContent>
-                        </Card>
+                      pastEvents.map((event, idx) => (
+                        <motion.div 
+                          key={event.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="relative"
+                        >
+                           <div className="absolute -left-11 top-1 w-6 h-6 rounded-full bg-background border-4 border-primary shadow-xl z-20" />
+                           <div className="p-6 rounded-3xl glass-card border border-border/50 hover:border-primary/30 smooth-transition group">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                 <div className="flex items-center gap-4">
+                                    <div className={`p-3 rounded-xl ${
+                                      event.category === 'work' ? 'bg-blue-500/10 text-blue-500' :
+                                      event.category === 'personal' ? 'bg-purple-500/10 text-purple-500' :
+                                      'bg-orange-500/10 text-orange-500'
+                                    }`}>
+                                       <History size={20} />
+                                    </div>
+                                    <div>
+                                       <h4 className="font-bold text-lg leading-tight group-hover:text-primary smooth-transition">{event.title}</h4>
+                                       <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
+                                          <span>{format(event.start, 'MMM d, yyyy')}</span>
+                                          <span className="opacity-30">•</span>
+                                          <span>{format(event.start, 'h:mm a')}</span>
+                                       </div>
+                                    </div>
+                                 </div>
+                                 <Badge variant="secondary" className="self-start md:self-center bg-primary/5 text-primary border-none text-[10px] uppercase font-black tracking-tighter px-3">
+                                    {event.category}
+                                 </Badge>
+                              </div>
+                           </div>
+                        </motion.div>
                       ))
                     ) : (
-                    <div className="text-center py-12 bg-muted/10 rounded-2xl border-2 border-dashed border-border">
-                      <History size={48} className="mx-auto mb-4 text-muted-foreground opacity-20" />
-                      <p className="text-muted-foreground">No past events yet. Your history will appear here.</p>
+                    <div className="text-center py-24 bg-muted/10 rounded-[3rem] border-2 border-dashed border-border/50 -ml-8">
+                      <History size={64} className="mx-auto mb-6 text-muted-foreground opacity-20" />
+                      <p className="text-muted-foreground font-bold text-lg">Archives empty.</p>
+                      <p className="text-muted-foreground/60 text-sm mt-1">Logs will appear as operations complete.</p>
                     </div>
                   )}
                 </div>
               </motion.div>
             )}
-                    </AnimatePresence>
-                  </div>
-                </ScrollArea>
-              </div>
-            </div>
-          </div>
+          </AnimatePresence>
         </div>
+      </ScrollArea>
+    </div>
+  </div>
 
-        {/* Mobile Bottom Nav */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border px-4 py-2 flex items-center justify-between z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
-          <MobileNavItem icon={<LayoutDashboard size={18} />} label="Home" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <MobileNavItem icon={<CalendarIcon size={18} />} label="Calendar" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
+  {/* Mobile Bottom Nav */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background/60 backdrop-blur-2xl border-t border-border/50 px-4 py-3 flex items-center justify-around z-40">
+          <MobileNavItem icon={<LayoutDashboard />} label="Home" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+          <MobileNavItem icon={<CalendarIcon />} label="Schedule" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
           
           <motion.button 
             onClick={toggleVoice}
             whileTap={{ scale: 0.9 }}
-            className={`flex flex-col items-center justify-center -mt-8 h-14 w-14 rounded-full shadow-lg transition-all duration-300 ${isListening ? 'bg-destructive' : 'bg-primary'} text-white border-4 ${isListening ? 'border-rose-500' : 'border-background'}`}
+            className={`flex flex-col items-center justify-center -mt-12 h-16 w-16 rounded-3xl shadow-2xl shadow-primary/20 transition-all duration-300 ${isListening ? 'bg-destructive rounded-full' : 'bg-primary'} text-white border-4 border-background`}
           >
-            {isListening ? <X size={24} /> : <Mic size={24} />}
+            {isListening ? <X size={28} /> : <Mic size={28} />}
           </motion.button>
 
-          <MobileNavItem icon={<CheckSquare size={18} />} label="Tasks" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
-          <MobileNavItem icon={<History size={18} />} label="History" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
+          <MobileNavItem icon={<CheckSquare />} label="Tasks" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
+          <MobileNavItem icon={<Globe />} label="Vault" active={activeTab === 'files'} onClick={() => setActiveTab('files')} />
         </div>
       </main>
     </div>
@@ -1229,17 +1040,15 @@ export default function App() {
 
 function MobileNavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <motion.button 
+    <button 
       onClick={onClick}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      className={`flex flex-col items-center gap-1 smooth-transition ${active ? 'text-primary' : 'text-muted-foreground'}`}
+      className={`flex flex-col items-center gap-1.5 flex-1 py-1 smooth-transition ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
     >
-      <div className={`p-1 rounded-lg transition-colors duration-150 ${active ? 'bg-primary/10' : ''}`}>
-        {icon}
+      <div className={`p-2 rounded-xl transition-all duration-300 ${active ? 'bg-primary/10 shadow-[0_0_15px_rgba(var(--primary),0.2)]' : ''}`}>
+        {React.isValidElement(icon) && React.cloneElement(icon as React.ReactElement<any>, { size: 20 })}
       </div>
-      <span className="text-[10px] font-medium">{label}</span>
-    </motion.button>
+      <span className="text-[10px] font-semibold tracking-wide uppercase">{label}</span>
+    </button>
   );
 }
 
@@ -1247,25 +1056,24 @@ function NavItem({ icon, label, active, collapsed, onClick }: { icon: React.Reac
   return (
     <motion.button 
       onClick={onClick}
-      whileHover={{ x: 4 }}
       whileTap={{ scale: 0.98 }}
-      className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl smooth-transition group relative three-d-card ${active ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'}`}
+      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl smooth-transition group relative ${active ? 'text-primary font-bold' : 'hover:bg-muted/40 text-muted-foreground hover:text-foreground'}`}
     >
       {active && (
         <motion.div 
-          layoutId="active-nav"
-          className="absolute inset-0 bg-primary/10 rounded-2xl border border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.15)] glass-card"
-          transition={{ type: "spring", bounce: 0, duration: 0.2 }}
+          layoutId="active-nav-bg"
+          className="absolute inset-0 bg-primary/5 rounded-xl border-l-4 border-primary"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
         />
       )}
-      <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 three-d-inner ${
+      <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-300 ${
         active 
-          ? 'bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(var(--primary),0.4)] scale-110' 
-          : 'bg-muted/30 text-muted-foreground group-hover:bg-muted/50 group-hover:text-primary group-hover:scale-110'
+          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105' 
+          : 'bg-muted/50 text-muted-foreground group-hover:bg-muted/80 group-hover:text-primary'
       }`}>
         {icon}
       </div>
-      {!collapsed && <span className="relative z-10 font-bold text-sm tracking-tight three-d-inner">{label}</span>}
+      {!collapsed && <span className="relative z-10 text-sm tracking-tight">{label}</span>}
     </motion.button>
   );
 }
@@ -1329,4 +1137,91 @@ function renderCalendarDays(currentDate: Date, events: Event[]) {
   }
 
   return days;
+}
+
+function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const hours = time.getHours();
+  const minutes = time.getMinutes();
+  const seconds = time.getSeconds();
+
+  const hourDeg = (hours % 12) * 30 + minutes * 0.5;
+  const minDeg = minutes * 6;
+  const secDeg = seconds * 6;
+
+  const isDark = theme === 'dark';
+
+  // High-quality photorealistic clock movement images
+  const spiralClockUrl = "https://images.unsplash.com/photo-1534067783941-51c9c23eaec3?auto=format&fit=crop&q=80&w=2000";
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden flex items-center justify-center -z-10 transition-all duration-1000">
+      <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+        
+        {/* Real Image Layer - Base */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={theme}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full"
+          >
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 scale-110"
+              style={{ 
+                backgroundImage: `url(${spiralClockUrl})`,
+                filter: isDark ? 'brightness(0.7) contrast(1.1)' : 'brightness(1.1) contrast(1.05)',
+              }}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Floating Mechanical Depth Layers */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
+            className={`w-[800px] h-[800px] rounded-full border-[20px] transition-colors duration-1000 ${isDark ? 'border-primary/5' : 'border-primary/10'} opacity-20`}
+          />
+          <motion.div 
+            animate={{ rotate: -360 }}
+            transition={{ duration: 180, repeat: Infinity, ease: "linear" }}
+            className={`absolute w-[600px] h-[600px] rounded-full border-[10px] transition-colors duration-1000 ${isDark ? 'border-indigo-500/5' : 'border-indigo-500/10'} opacity-10`}
+          />
+        </div>
+
+        {/* Clock Hands Container (The Live Elements) */}
+        <div className="relative w-[800px] h-[800px] flex items-center justify-center translate-x-12 translate-y-6 opacity-80 lg:translate-x-32 lg:translate-y-20">
+          {/* Hour Hand */}
+          <motion.div 
+            className={`absolute w-3 h-[240px] rounded-full ${isDark ? 'bg-primary/40 shadow-2xl' : 'bg-primary/60 shadow-lg'}`}
+            style={{ transformOrigin: 'bottom center', top: '160px', rotate: hourDeg }}
+          />
+
+          {/* Minute Hand */}
+          <motion.div 
+            className={`absolute w-2 h-[380px] rounded-full ${isDark ? 'bg-indigo-300/30' : 'bg-indigo-600/40'}`}
+            style={{ transformOrigin: 'bottom center', top: '20px', rotate: minDeg }}
+          />
+
+          {/* Second Hand */}
+          <motion.div 
+            className="absolute w-1 h-[420px] bg-rose-500/20 rounded-full"
+            style={{ transformOrigin: 'bottom center', top: '-20px', rotate: secDeg }}
+          />
+        </div>
+
+        {/* Grainy Texture Overlay for "Real" Feel */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      </div>
+    </div>
+  );
 }
