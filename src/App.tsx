@@ -68,6 +68,7 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [userName, setUserName] = useState(() => localStorage.getItem('pandior_user_name') || 'Jedi Amos');
   const [isListening, setIsListening] = useState(false);
   const [streak, setStreak] = useState(() => Number(localStorage.getItem('pandior_streak')) || 5);
   const [xp, setXp] = useState(() => Number(localStorage.getItem('pandior_xp')) || 0);
@@ -77,8 +78,8 @@ export default function App() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [connectedAccounts, setConnectedAccounts] = useState<{google: boolean, zoom: boolean}>({
-    google: false,
-    zoom: false
+    google: Number(localStorage.getItem('pandior_conn_google')) === 1,
+    zoom: Number(localStorage.getItem('pandior_conn_zoom')) === 1
   });
 
   // Persistence effects
@@ -86,6 +87,7 @@ export default function App() {
     try {
       const savedEvents = localStorage.getItem('pandior_events');
       const savedTasks = localStorage.getItem('pandior_tasks');
+      const today = new Date();
       
       if (savedEvents) {
         const parsed = JSON.parse(savedEvents);
@@ -98,7 +100,6 @@ export default function App() {
         }
       } else {
         // Initial mock data if nothing saved
-        const today = new Date();
         setEvents([
           {
             id: '1',
@@ -106,8 +107,16 @@ export default function App() {
             start: new Date(today.setHours(10, 0, 0, 0)),
             end: new Date(today.setHours(11, 0, 0, 0)),
             category: 'meeting',
-            priority: 'high',
+            priority: 'medium',
             description: 'Discuss Q2 goals and roadmap.'
+          },
+          {
+            id: '2',
+            title: 'Design Review',
+            start: new Date(addDays(today, 1).setHours(14, 0, 0, 0)),
+            end: new Date(addDays(today, 1).setHours(15, 30, 0, 0)),
+            category: 'work',
+            priority: 'medium',
           }
         ]);
       }
@@ -121,15 +130,19 @@ export default function App() {
           })));
         }
       } else {
-        const today = new Date();
         setTasks([
           { id: '1', title: 'Review project spec', dueDate: addDays(today, 2), completed: false },
           { id: '2', title: 'Update design assets', dueDate: today, completed: true },
+          { id: '3', title: 'Send weekly report', dueDate: addDays(today, 1), completed: false },
         ]);
       }
+
+      setSuggestions([
+        { title: 'Focus Time', reason: 'You have a 3-hour gap on Wednesday afternoon.', suggestedTime: 'Wed, 2:00 PM' },
+        { title: 'Reschedule Sync', reason: 'Conflict detected with Design Review.', suggestedTime: 'Thu, 10:00 AM' }
+      ]);
     } catch (error) {
       console.error("Error loading saved data:", error);
-      // Fallback to defaults is already handled by the state initialization or the else blocks
     }
   }, []);
 
@@ -195,40 +208,7 @@ export default function App() {
     root.classList.add(theme);
   }, [theme]);
 
-  // Initial mock data
-  useEffect(() => {
-    const today = new Date();
-    setEvents([
-      {
-        id: '1',
-        title: 'Team Sync & Strategy',
-        start: new Date(today.setHours(10, 0, 0, 0)),
-        end: new Date(today.setHours(11, 0, 0, 0)),
-        category: 'meeting',
-        priority: 'high',
-        description: 'Discuss Q2 goals and roadmap.'
-      },
-      {
-        id: '2',
-        title: 'Design Review',
-        start: new Date(addDays(today, 1).setHours(14, 0, 0, 0)),
-        end: new Date(addDays(today, 1).setHours(15, 30, 0, 0)),
-        category: 'work',
-        priority: 'medium',
-      }
-    ]);
 
-    setTasks([
-      { id: '1', title: 'Review project spec', dueDate: addDays(today, 2), completed: false },
-      { id: '2', title: 'Update design assets', dueDate: today, completed: true },
-      { id: '3', title: 'Send weekly report', dueDate: addDays(today, 1), completed: false },
-    ]);
-
-    setSuggestions([
-      { title: 'Focus Time', reason: 'You have a 3-hour gap on Wednesday afternoon.', suggestedTime: 'Wed, 2:00 PM' },
-      { title: 'Reschedule Sync', reason: 'Conflict detected with Design Review.', suggestedTime: 'Thu, 10:00 AM' }
-    ]);
-  }, []);
 
   // Voice recognition setup
   const recognitionRef = useRef<any>(null);
@@ -453,7 +433,7 @@ export default function App() {
                 </Avatar>
                 {isSidebarOpen && (
                   <div className="flex-1 overflow-hidden">
-                    <p className="text-xs font-bold leading-none">Jedi Amos</p>
+                    <p className="text-xs font-bold leading-none">{userName}</p>
                     <p className="text-[10px] text-muted-foreground mt-1 truncate">Pro Planner</p>
                   </div>
                 )}
@@ -601,7 +581,7 @@ export default function App() {
                       </div>
                       <div className="relative z-10">
                         <Badge className="bg-primary/20 text-primary border-none mb-6 px-4 py-1.5 text-[10px] uppercase tracking-widest font-black">Authorized Access</Badge>
-                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Good Morning, Jedi.</h2>
+                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Good Morning, {userName.split(' ')[0]}.</h2>
                         <p className="text-lg text-muted-foreground/80 max-w-lg leading-relaxed font-medium">
                           You have {upcomingEvents.length} assignments prioritized for today. 
                           Your current focus efficiency is at 94% — the highest this week.
@@ -758,7 +738,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="flex-1 glass-card rounded-[2.5rem] border border-border/50 flex flex-col overflow-hidden shadow-2xl">
+                <div className="flex-1 glass-card rounded-[2.5rem] border border-border/50 flex flex-col overflow-hidden shadow-2xl relative">
                   <div className="grid grid-cols-7 border-b border-border/30 bg-muted/20">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                       <div key={day} className="py-5 text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
@@ -766,8 +746,19 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                  <div className="flex-1 grid grid-cols-7 grid-rows-6">
-                    {renderCalendarDays(currentDate, events)}
+                  <div className="flex-1 overflow-hidden relative min-h-[450px]">
+                    <AnimatePresence mode="wait">
+                      <motion.div 
+                        key={currentDate.getMonth() + '-' + currentDate.getFullYear()}
+                        initial={{ opacity: 0, scale: 0.99, filter: "blur(4px)" }}
+                        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                        exit={{ opacity: 0, scale: 0.99, filter: "blur(4px)" }}
+                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        className="absolute inset-0 grid grid-cols-7 grid-rows-6"
+                      >
+                        {renderCalendarDays(currentDate, events)}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
@@ -1011,6 +1002,224 @@ export default function App() {
                 </div>
               </motion.div>
             )}
+
+            {activeTab === 'settings' && (
+              <motion.div 
+                key="settings"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="max-w-4xl mx-auto space-y-8 pb-10"
+              >
+                <div>
+                  <h2 className="text-4xl font-bold tracking-tight">System Settings</h2>
+                  <p className="text-muted-foreground font-medium mt-1">Configure your workspace profiling, authentications, and interface preferences.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Profile Management Card */}
+                  <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 flex flex-col space-y-6 animate-fade-in-up">
+                    <h3 className="text-xl font-bold flex items-center gap-2">🛡️ Profile Configuration</h3>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="perf-user-name" className="text-xs font-black uppercase tracking-widest opacity-60">Designation Name</Label>
+                        <Input 
+                          id="perf-user-name" 
+                          value={userName} 
+                          onChange={(e) => {
+                            setUserName(e.target.value);
+                            localStorage.setItem('pandior_user_name', e.target.value);
+                          }}
+                          className="rounded-xl h-12 bg-white/5 border border-white/10 text-foreground"
+                          placeholder="Your planning rank" 
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="perf-user-title" className="text-xs font-black uppercase tracking-widest opacity-60">Professional Rank / Subtitle</Label>
+                        <Input 
+                          id="perf-user-title" 
+                          defaultValue={localStorage.getItem('pandior_title') || 'Pro Planner'} 
+                          onChange={(e) => {
+                            localStorage.setItem('pandior_title', e.target.value);
+                          }}
+                          className="rounded-xl h-12 bg-white/5 border border-white/10 text-foreground"
+                          placeholder="e.g. Master Strategist" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <Button 
+                        onClick={() => {
+                          toast.success("Profile records modernized successfully!", { icon: "🛡️" });
+                          haptics.impact();
+                        }}
+                        className="w-full rounded-2xl h-12 font-bold"
+                      >
+                        Save Profiling Metadata
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Integrations Card */}
+                  <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 flex flex-col space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">🔌 Workspace Integrations</h3>
+                    
+                    <div className="space-y-4">
+                      {/* Google Calendar */}
+                      <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/20 border border-border/30">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-500">
+                            <CalendarIcon size={20} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold leading-none">Google Calendar</p>
+                            <p className="text-[11px] text-muted-foreground mt-1">Keep schedule synced</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant={connectedAccounts.google ? "destructive" : "secondary"}
+                          onClick={() => {
+                            const nState = !connectedAccounts.google;
+                            setConnectedAccounts(prev => ({ ...prev, google: nState }));
+                            localStorage.setItem('pandior_conn_google', nState ? "1" : "0");
+                            toast.success(nState ? "Google Calendar synchronized" : "Google Calendar uncoupled", { icon: "📅" });
+                            haptics.impact();
+                          }}
+                          className="h-10 rounded-xl px-4 text-xs font-bold"
+                        >
+                          {connectedAccounts.google ? "Disconnect" : "Connect"}
+                        </Button>
+                      </div>
+
+                      {/* Zoom */}
+                      <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/20 border border-border/30">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
+                            <Video size={18} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold leading-none">Zoom Meetings</p>
+                            <p className="text-[11px] text-muted-foreground mt-1">Automatic link creation</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant={connectedAccounts.zoom ? "destructive" : "secondary"}
+                          onClick={() => {
+                            const nState = !connectedAccounts.zoom;
+                            setConnectedAccounts(prev => ({ ...prev, zoom: nState }));
+                            localStorage.setItem('pandior_conn_zoom', nState ? "1" : "0");
+                            toast.success(nState ? "Zoom workspace linked" : "Zoom integration disabled", { icon: "📹" });
+                            haptics.impact();
+                          }}
+                          className="h-10 rounded-xl px-4 text-xs font-bold"
+                        >
+                          {connectedAccounts.zoom ? "Disconnect" : "Connect"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Preferences */}
+                  <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 col-span-1 md:col-span-2 flex flex-col space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2">🎨 Aesthetic Adaptability</h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div className="p-5 rounded-2xl bg-muted/15 border border-border/30 flex flex-col justify-between">
+                        <div>
+                          <p className="text-sm font-bold">Contrast Theme</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">Toggle light/dark views</p>
+                        </div>
+                        <div className="flex items-center justify-between mt-4">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className={`h-11 w-11 rounded-xl hover:bg-primary/20 ${theme === 'dark' ? 'bg-primary text-primary-foreground border-none scale-105 shadow-md shadow-primary/25' : 'bg-transparent text-muted-foreground'}`}
+                            onClick={() => {
+                              setTheme('dark');
+                              toast.info("Aesthetic shifted: Dark Ambient");
+                              haptics.impact();
+                            }}
+                          >
+                            <Moon size={18} />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className={`h-11 w-11 rounded-xl hover:bg-primary/20 ${theme === 'light' ? 'bg-primary text-primary-foreground border-none scale-105 shadow-md shadow-primary/25' : 'bg-transparent text-muted-foreground'}`}
+                            onClick={() => {
+                              setTheme('light');
+                              toast.info("Aesthetic shifted: Celestial Light");
+                              haptics.impact();
+                            }}
+                          >
+                            <Sun size={18} />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-muted/15 border border-border/30 flex flex-col justify-between">
+                        <div>
+                          <p className="text-sm font-bold">Audio & Echoes</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">Play interface response sound</p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-4">
+                          <Button 
+                            onClick={() => {
+                              const bState = localStorage.getItem('pandior_sound') !== '0';
+                              localStorage.setItem('pandior_sound', bState ? '0' : '1');
+                              toast.info(bState ? "Sound FX muted" : "Sounds active", { icon: "🔊" });
+                              haptics.impact();
+                            }}
+                            variant="secondary"
+                            className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider"
+                          >
+                            {localStorage.getItem('pandior_sound') === '0' ? "Muted" : "Active"}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-muted/15 border border-border/30 flex flex-col justify-between">
+                        <div>
+                          <p className="text-sm font-bold">Data Storage</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">Flush and restore defaults</p>
+                        </div>
+                        <Dialog>
+                          <DialogTrigger render={<Button variant="destructive" className="w-full h-11 rounded-xl font-bold text-xs uppercase tracking-wider mt-4 animate-pulse" />}>
+                            Purge Records
+                          </DialogTrigger>
+                          <DialogContent className="glass-card border border-white/20 rounded-3xl">
+                            <DialogHeader>
+                              <DialogTitle className="text-2xl font-bold tracking-tight text-destructive">Erase Local Records?</DialogTitle>
+                            </DialogHeader>
+                            <div className="py-4 space-y-4">
+                              <p className="text-sm text-muted-foreground leading-relaxed">This completely purges your local browser storage, resetting all tasks, scheduling histories, XP progression levels, and workspace logs. This operation cannot be undone.</p>
+                              <div className="flex justify-end gap-3 pt-4">
+                                <Button variant="ghost" onClick={() => haptics.impact()} className="rounded-xl">Retain</Button>
+                                <Button 
+                                  variant="destructive" 
+                                  className="rounded-xl"
+                                  onClick={() => {
+                                    localStorage.clear();
+                                    toast.success("All systems have been wiped.");
+                                    haptics.impact();
+                                    setTimeout(() => window.location.reload(), 1200);
+                                  }}
+                                >
+                                  Complete Purge
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </ScrollArea>
@@ -1235,8 +1444,8 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
 
   const isDark = theme === 'dark';
 
-  // Premium, breathtaking surreal golden sunset cloud landscape perfectly matching the user's uploaded backdrop
-  const sunsetCloudsUrl = "https://images.unsplash.com/photo-1541417904950-b855846fe074?auto=format&fit=crop&q=80&w=2400";
+  // Optimized high-performance surreal golden sunset cloud backdrop
+  const sunsetCloudsUrl = "https://images.unsplash.com/photo-1541417904950-b855846fe074?auto=format&fit=crop&q=70&w=1200";
 
   // Create radial logarithmic spiral coordinates (centered at 400, 400 inside an 800x800 viewBox)
   const spiralPoints = [];
@@ -1341,7 +1550,7 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <svg 
             viewBox="0 0 800 800" 
-            className="w-[72vw] h-[72vw] max-w-[500px] max-h-[500px] opacity-65 md:opacity-75 translate-x-12 translate-y-8 md:translate-x-24 md:translate-y-16 transition-transform duration-1000"
+            className="w-[72vw] h-[72vw] max-w-[430px] max-h-[430px] opacity-50 md:opacity-60 translate-x-3 translate-y-3 md:translate-x-10 md:translate-y-10 transition-all duration-1000"
           >
             <defs>
               <linearGradient id="spiralGold" x1="0%" y1="0%" x2="100%" y2="100%">
