@@ -367,7 +367,7 @@ export default function App() {
     .sort((a, b) => b.start.getTime() - a.start.getTime());
 
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden relative">
+    <div className="flex h-screen bg-transparent text-foreground font-sans overflow-hidden relative">
       <Toaster position="top-right" />
       
       {/* Dynamic Clock Background */}
@@ -381,12 +381,12 @@ export default function App() {
           x: (window.innerWidth < 768 && !isSidebarOpen) ? -280 : 0
         }}
         transition={{ type: "spring", stiffness: 350, damping: 30 }}
-        className={`fixed md:relative h-full border-r border-border bg-card/60 backdrop-blur-3xl flex flex-col z-50`}
+        className={`fixed md:relative h-full border-r border-white/10 dark:border-white/5 bg-white/5 dark:bg-black/15 backdrop-blur-xl flex flex-col z-50`}
       >
         {/* Mobile Overlay */}
         {isSidebarOpen && (
           <div 
-            className="md:hidden fixed inset-0 bg-background/60 backdrop-blur-sm z-[-1]" 
+            className="md:hidden fixed inset-0 bg-black/10 backdrop-blur-sm z-[-1]" 
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
@@ -1018,14 +1018,14 @@ export default function App() {
   </div>
 
   {/* Mobile Bottom Nav */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background/60 backdrop-blur-2xl border-t border-border/50 px-4 py-3 flex items-center justify-around z-40">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/5 dark:bg-black/15 backdrop-blur-3xl border-t border-white/10 dark:border-white/5 px-4 py-3 flex items-center justify-around z-40">
           <MobileNavItem icon={<LayoutDashboard />} label="Home" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           <MobileNavItem icon={<CalendarIcon />} label="Schedule" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
           
           <motion.button 
             onClick={toggleVoice}
             whileTap={{ scale: 0.9 }}
-            className={`flex flex-col items-center justify-center -mt-12 h-16 w-16 rounded-3xl shadow-2xl shadow-primary/20 transition-all duration-300 ${isListening ? 'bg-destructive rounded-full' : 'bg-primary'} text-white border-4 border-background`}
+            className={`flex flex-col items-center justify-center -mt-12 h-16 w-16 rounded-3xl shadow-2xl shadow-primary/20 transition-all duration-300 ${isListening ? 'bg-destructive rounded-full' : 'bg-primary'} text-white border-4 border-white/10`}
           >
             {isListening ? <X size={28} /> : <Mic size={28} />}
           </motion.button>
@@ -1141,10 +1141,24 @@ function renderCalendarDays(currentDate: Date, events: Event[]) {
 
 function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
   const [time, setTime] = useState(new Date());
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; duration: number; delay: number }[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Generate floating star/dust celestial particles on mount for premium surreal feel
+  useEffect(() => {
+    const freshParticles = Array.from({ length: 40 }).map((_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 2 + 1,
+      duration: Math.random() * 12 + 8,
+      delay: Math.random() * -10
+    }));
+    setParticles(freshParticles);
   }, []);
 
   const hours = time.getHours();
@@ -1157,70 +1171,236 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
 
   const isDark = theme === 'dark';
 
-  // High-quality photorealistic clock movement images
-  const spiralClockUrl = "https://images.unsplash.com/photo-1534067783941-51c9c23eaec3?auto=format&fit=crop&q=80&w=2000";
+  // Premium, breathtaking surreal golden sunset cloud landscape perfectly matching the user's uploaded backdrop
+  const sunsetCloudsUrl = "https://images.unsplash.com/photo-1541417904950-b855846fe074?auto=format&fit=crop&q=80&w=2400";
+
+  // Create radial logarithmic spiral coordinates (centered at 400, 400 inside an 800x800 viewBox)
+  const spiralPoints = [];
+  const loops = 2.8;
+  const steps = 240;
+  const maxR = 340; // Outside radius winding inside
+  for (let i = 0; i <= steps; i++) {
+    const fraction = i / steps;
+    const angle = fraction * loops * 2 * Math.PI - Math.PI / 2;
+    // Radial shrink modeled exponentially for pristine surreal depth
+    const r = maxR * Math.pow(1 - fraction, 1.25);
+    const x = 400 + r * Math.sin(angle);
+    const y = 400 - r * Math.cos(angle);
+    spiralPoints.push({ x, y });
+  }
+
+  // Draw smooth continuous SVG spiral path
+  const pathD = spiralPoints.reduce((acc, p, j) => {
+    return acc + (j === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`);
+  }, "");
+
+  // Generate Roman Numerals along spiral path
+  const romanNumerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+  const placedNumerals = [];
+  const numeralCount = 18; // Gradual 1.5 loops of active markings
+  for (let i = 0; i < numeralCount; i++) {
+    const fraction = i / numeralCount;
+    // Align placement to natural log offsets
+    const angle = fraction * 2.2 * 2 * Math.PI - Math.PI / 2;
+    const r = maxR * Math.pow(1 - fraction, 1.2);
+    
+    const x = 400 + r * Math.sin(angle);
+    const y = 400 - r * Math.cos(angle);
+    
+    const numeral = romanNumerals[i % 12];
+    const size = Math.max(8, 22 * (1 - fraction * 0.55));
+    const opacity = Math.max(0.15, 0.9 * (1 - fraction * 0.65));
+    placedNumerals.push({ text: numeral, x, y, size, opacity, angle });
+  }
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden flex items-center justify-center -z-10 transition-all duration-1000">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden flex items-center justify-center -z-20 transition-all duration-1000">
       <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
         
-        {/* Real Image Layer - Base */}
+        {/* Surreal Sunset Imagery Base Layer (Fully Unblocked) */}
         <AnimatePresence mode="wait">
           <motion.div
             key={theme}
-            initial={{ opacity: 0, scale: 1.1 }}
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 1.5, ease: "easeInOut" }}
             className="absolute inset-0 w-full h-full"
           >
             <div 
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 scale-110"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000"
               style={{ 
-                backgroundImage: `url(${spiralClockUrl})`,
-                filter: isDark ? 'brightness(0.7) contrast(1.1)' : 'brightness(1.1) contrast(1.05)',
+                backgroundImage: `url(${sunsetCloudsUrl})`,
+                filter: isDark ? 'brightness(0.65) contrast(1.15) saturate(1.1)' : 'brightness(1.05) contrast(1.02) saturate(1.1)'
+              }}
+            />
+            {/* Extremely light theme gradient mesh to ensure highly legible text under transparent cards */}
+            <div 
+              className="absolute inset-0 transition-colors duration-1000"
+              style={{
+                background: isDark 
+                  ? 'radial-gradient(circle at 50% 50%, rgba(20, 10, 30, 0.15) 0%, rgba(10, 5, 20, 0.4) 100%)' 
+                  : 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 240, 230, 0.25) 100%)'
               }}
             />
           </motion.div>
         </AnimatePresence>
 
-        {/* Floating Mechanical Depth Layers */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
-            className={`w-[800px] h-[800px] rounded-full border-[20px] transition-colors duration-1000 ${isDark ? 'border-primary/5' : 'border-primary/10'} opacity-20`}
-          />
-          <motion.div 
-            animate={{ rotate: -360 }}
-            transition={{ duration: 180, repeat: Infinity, ease: "linear" }}
-            className={`absolute w-[600px] h-[600px] rounded-full border-[10px] transition-colors duration-1000 ${isDark ? 'border-indigo-500/5' : 'border-indigo-500/10'} opacity-10`}
-          />
+        {/* Slow Hanging Cloud Particle Dust */}
+        <div className="absolute inset-0 z-0 opacity-40">
+          {particles.map(p => (
+            <motion.div
+              key={p.id}
+              className="absolute bg-amber-200/40 rounded-full blur-[0.5px]"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: p.size,
+                height: p.size,
+              }}
+              animate={{
+                y: [-25, 25],
+                opacity: [0, 0.8, 0],
+                scale: [0.8, 1.2, 0.8]
+              }}
+              transition={{
+                duration: p.duration,
+                repeat: Infinity,
+                delay: p.delay,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
         </div>
 
-        {/* Clock Hands Container (The Live Elements) */}
-        <div className="relative w-[800px] h-[800px] flex items-center justify-center translate-x-12 translate-y-6 opacity-80 lg:translate-x-32 lg:translate-y-20">
-          {/* Hour Hand */}
-          <motion.div 
-            className={`absolute w-3 h-[240px] rounded-full ${isDark ? 'bg-primary/40 shadow-2xl' : 'bg-primary/60 shadow-lg'}`}
-            style={{ transformOrigin: 'bottom center', top: '160px', rotate: hourDeg }}
-          />
+        {/* The Giant Spiral Clock Face SVG */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <svg 
+            viewBox="0 0 800 800" 
+            className="w-[95vw] h-[95vw] max-w-[850px] max-h-[850px] opacity-75 md:opacity-85 translate-x-4 md:translate-x-16 transition-transform duration-1000"
+          >
+            <defs>
+              <linearGradient id="spiralGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.7" />
+                <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#ec4899" stopOpacity="0.1" />
+              </linearGradient>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="8" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
 
-          {/* Minute Hand */}
-          <motion.div 
-            className={`absolute w-2 h-[380px] rounded-full ${isDark ? 'bg-indigo-300/30' : 'bg-indigo-600/40'}`}
-            style={{ transformOrigin: 'bottom center', top: '20px', rotate: minDeg }}
-          />
+            {/* Glowing Logarithmic SVG spiral curve */}
+            <motion.path 
+              d={pathD} 
+              fill="none" 
+              stroke="url(#spiralGold)" 
+              strokeWidth="2.5" 
+              strokeDasharray="5 3"
+              filter="url(#glow)"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 2, ease: "easeOut" }}
+            />
 
-          {/* Second Hand */}
-          <motion.div 
-            className="absolute w-1 h-[420px] bg-rose-500/20 rounded-full"
-            style={{ transformOrigin: 'bottom center', top: '-20px', rotate: secDeg }}
-          />
+            {/* Glowing subtle spiral dot sequence */}
+            {spiralPoints.filter((_, idx) => idx % 8 === 0).map((p, idx) => (
+              <circle
+                key={`dot-${idx}`}
+                cx={p.x}
+                cy={p.y}
+                r="1.5"
+                fill="#fef08a"
+                opacity={Math.max(0.1, 0.8 * (1 - idx / 30))}
+              />
+            ))}
+
+            {/* Render Floating Surreal Roman Numerals with soft light masks */}
+            {placedNumerals.map((num, idx) => (
+              <motion.g 
+                key={`num-${idx}`}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: num.opacity, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <text
+                  x={num.x}
+                  y={num.y + 6}
+                  textAnchor="middle"
+                  fill="#ffffff"
+                  className="font-heading font-light select-none cursor-default drop-shadow-[0_4px_12px_rgba(251,191,36,0.3)]"
+                  style={{
+                    fontSize: `${num.size}px`,
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {num.text}
+                </text>
+              </motion.g>
+            ))}
+
+            {/* Precision Watch Pointer Center Cog */}
+            <circle cx="400" cy="400" r="10" fill="#fbbf24" className="shadow-lg" filter="url(#glow)" />
+            <circle cx="400" cy="400" r="4" fill="#ffffff" />
+
+            {/* Hour Hand (Pointer with hollow loop) */}
+            <g transform={`rotate(${hourDeg}, 400, 400)`}>
+              <line 
+                x1="400" 
+                y1="400" 
+                x2="400" 
+                y2="220" 
+                stroke="#fef08a" 
+                strokeWidth="4" 
+                strokeLinecap="round" 
+                filter="url(#glow)"
+              />
+              <circle cx="400" cy="220" r="8" fill="none" stroke="#fef08a" strokeWidth="2.5" />
+            </g>
+
+            {/* Minute Hand (Sleek needle with double bar) */}
+            <g transform={`rotate(${minDeg}, 400, 400)`}>
+              <line 
+                x1="400" 
+                y1="400" 
+                x2="400" 
+                y2="150" 
+                stroke="#ffffff" 
+                strokeWidth="2.5" 
+                strokeLinecap="round"
+                opacity="0.9"
+              />
+              <line 
+                x1="397" 
+                y1="220" 
+                x2="403" 
+                y2="220" 
+                stroke="#ffffff" 
+                strokeWidth="2" 
+                opacity="0.8"
+              />
+            </g>
+
+            {/* Second Hand (Telescopic glowing ruby filament) */}
+            <g transform={`rotate(${secDeg}, 400, 400)`}>
+              <line 
+                x1="400" 
+                y1="430" 
+                x2="400" 
+                y2="100" 
+                stroke="#f43f5e" 
+                strokeWidth="1.2" 
+                strokeLinecap="round"
+                filter="url(#glow)"
+              />
+              <circle cx="400" cy="400" r="2.5" fill="#f43f5e" />
+            </g>
+          </svg>
         </div>
 
-        {/* Grainy Texture Overlay for "Real" Feel */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        {/* Grainy Texture Overlay for Organic Feeling */}
+        <div className="absolute inset-0 opacity-[0.035] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
       </div>
     </div>
   );

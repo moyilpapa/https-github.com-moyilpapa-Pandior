@@ -115,7 +115,7 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-transparent text-foreground;
     }
   html {
     @apply font-sans;
@@ -128,11 +128,12 @@
   }
 
   .glass-card {
-    @apply bg-card/40 backdrop-blur-3xl border border-white/5 shadow-2xl;
+    @apply bg-white/5 dark:bg-black/15 backdrop-blur-xl border border-white/10 dark:border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.12)] rounded-[2.5rem] hover:bg-white/10 dark:hover:bg-black/20;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .neo-blur {
-    backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(200%);
   }
   
   .bento-grid {
