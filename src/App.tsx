@@ -1431,13 +1431,13 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
 
   // Generate floating star/dust celestial particles on mount for premium surreal feel
   useEffect(() => {
-    const freshParticles = Array.from({ length: 40 }).map((_, i) => ({
+    const freshParticles = Array.from({ length: 20 }).map((_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 2 + 1,
-      duration: Math.random() * 12 + 8,
-      delay: Math.random() * -10
+      size: Math.random() * 1.5 + 0.8,
+      duration: Math.random() * 16 + 10,
+      delay: Math.random() * -12
     }));
     setParticles(freshParticles);
   }, []);
@@ -1532,9 +1532,9 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
                 height: p.size,
               }}
               animate={{
-                y: [-25, 25],
-                opacity: [0, 0.8, 0],
-                scale: [0.8, 1.2, 0.8]
+                y: [-5, 5],
+                opacity: [0, 0.7, 0],
+                scale: [0.9, 1.1, 0.9]
               }}
               transition={{
                 duration: p.duration,
