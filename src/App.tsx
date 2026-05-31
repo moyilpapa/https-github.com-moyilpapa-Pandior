@@ -1139,14 +1139,86 @@ function renderCalendarDays(currentDate: Date, events: Event[]) {
   return days;
 }
 
-function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
+function ClockHands() {
   const [time, setTime] = useState(new Date());
-  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; duration: number; delay: number }[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const hours = time.getHours();
+  const minutes = time.getMinutes();
+  const seconds = time.getSeconds();
+
+  const hourDeg = (hours % 12) * 30 + minutes * 0.5;
+  const minDeg = minutes * 6;
+  const secDeg = seconds * 6;
+
+  return (
+    <>
+      {/* Precision Watch Pointer Center Cog */}
+      <circle cx="400" cy="400" r="10" fill="#fbbf24" className="shadow-lg" filter="url(#glow)" />
+      <circle cx="400" cy="400" r="4" fill="#ffffff" />
+
+      {/* Hour Hand (Pointer with hollow loop) */}
+      <g transform={`rotate(${hourDeg}, 400, 400)`}>
+        <line 
+          x1="400" 
+          y1="400" 
+          x2="400" 
+          y2="220" 
+          stroke="#fef08a" 
+          strokeWidth="4" 
+          strokeLinecap="round" 
+          filter="url(#glow)"
+        />
+        <circle cx="400" cy="220" r="8" fill="none" stroke="#fef08a" strokeWidth="2.5" />
+      </g>
+
+      {/* Minute Hand (Sleek needle with double bar) */}
+      <g transform={`rotate(${minDeg}, 400, 400)`}>
+        <line 
+          x1="400" 
+          y1="400" 
+          x2="400" 
+          y2="150" 
+          stroke="#ffffff" 
+          strokeWidth="2.5" 
+          strokeLinecap="round"
+          opacity="0.9"
+        />
+        <line 
+          x1="397" 
+          y1="220" 
+          x2="403" 
+          y2="220" 
+          stroke="#ffffff" 
+          strokeWidth="2" 
+          opacity="0.8"
+        />
+      </g>
+
+      {/* Second Hand (Telescopic glowing ruby filament) */}
+      <g transform={`rotate(${secDeg}, 400, 400)`}>
+        <line 
+          x1="400" 
+          y1="430" 
+          x2="400" 
+          y2="100" 
+          stroke="#f43f5e" 
+          strokeWidth="1.2" 
+          strokeLinecap="round"
+          filter="url(#glow)"
+        />
+        <circle cx="400" cy="400" r="2.5" fill="#f43f5e" />
+      </g>
+    </>
+  );
+}
+
+function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; duration: number; delay: number }[]>([]);
 
   // Generate floating star/dust celestial particles on mount for premium surreal feel
   useEffect(() => {
@@ -1160,14 +1232,6 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
     }));
     setParticles(freshParticles);
   }, []);
-
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-
-  const hourDeg = (hours % 12) * 30 + minutes * 0.5;
-  const minDeg = minutes * 6;
-  const secDeg = seconds * 6;
 
   const isDark = theme === 'dark';
 
@@ -1277,7 +1341,7 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <svg 
             viewBox="0 0 800 800" 
-            className="w-[95vw] h-[95vw] max-w-[850px] max-h-[850px] opacity-75 md:opacity-85 translate-x-4 md:translate-x-16 transition-transform duration-1000"
+            className="w-[72vw] h-[72vw] max-w-[500px] max-h-[500px] opacity-65 md:opacity-75 translate-x-12 translate-y-8 md:translate-x-24 md:translate-y-16 transition-transform duration-1000"
           >
             <defs>
               <linearGradient id="spiralGold" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1340,62 +1404,8 @@ function ClockBackground({ theme }: { theme: 'light' | 'dark' }) {
               </motion.g>
             ))}
 
-            {/* Precision Watch Pointer Center Cog */}
-            <circle cx="400" cy="400" r="10" fill="#fbbf24" className="shadow-lg" filter="url(#glow)" />
-            <circle cx="400" cy="400" r="4" fill="#ffffff" />
-
-            {/* Hour Hand (Pointer with hollow loop) */}
-            <g transform={`rotate(${hourDeg}, 400, 400)`}>
-              <line 
-                x1="400" 
-                y1="400" 
-                x2="400" 
-                y2="220" 
-                stroke="#fef08a" 
-                strokeWidth="4" 
-                strokeLinecap="round" 
-                filter="url(#glow)"
-              />
-              <circle cx="400" cy="220" r="8" fill="none" stroke="#fef08a" strokeWidth="2.5" />
-            </g>
-
-            {/* Minute Hand (Sleek needle with double bar) */}
-            <g transform={`rotate(${minDeg}, 400, 400)`}>
-              <line 
-                x1="400" 
-                y1="400" 
-                x2="400" 
-                y2="150" 
-                stroke="#ffffff" 
-                strokeWidth="2.5" 
-                strokeLinecap="round"
-                opacity="0.9"
-              />
-              <line 
-                x1="397" 
-                y1="220" 
-                x2="403" 
-                y2="220" 
-                stroke="#ffffff" 
-                strokeWidth="2" 
-                opacity="0.8"
-              />
-            </g>
-
-            {/* Second Hand (Telescopic glowing ruby filament) */}
-            <g transform={`rotate(${secDeg}, 400, 400)`}>
-              <line 
-                x1="400" 
-                y1="430" 
-                x2="400" 
-                y2="100" 
-                stroke="#f43f5e" 
-                strokeWidth="1.2" 
-                strokeLinecap="round"
-                filter="url(#glow)"
-              />
-              <circle cx="400" cy="400" r="2.5" fill="#f43f5e" />
-            </g>
+            {/* Optimized ticking clock hands layer */}
+            <ClockHands />
           </svg>
         </div>
 
