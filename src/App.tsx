@@ -349,6 +349,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-transparent text-foreground font-sans overflow-hidden relative">
       <Toaster position="top-right" />
+      <ScrollToTop activeTab={activeTab} />
       
       {/* Dynamic Clock Background */}
       <ClockBackground theme={theme} />
@@ -1245,6 +1246,18 @@ export default function App() {
       </main>
     </div>
   );
+}
+
+function ScrollToTop({ activeTab }: { activeTab: string }) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const viewports = document.querySelectorAll('[data-slot="scroll-area-viewport"]');
+    viewports.forEach(viewport => {
+      viewport.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }, [activeTab]);
+
+  return null;
 }
 
 function MobileNavItem({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
