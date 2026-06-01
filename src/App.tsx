@@ -942,11 +942,11 @@ export default function App() {
                       </DialogHeader>
                       <div className="space-y-6 py-6">
                         <div className="space-y-2">
-                          <Label htmlFor="task-title" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Objective Designation</Label>
+                          <Label htmlFor="task-title" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-50">Objective Designation</Label>
                           <Input id="task-title" placeholder="Define your next target..." className="rounded-xl h-12 bg-muted/30" />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="task-date" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Target Timeline</Label>
+                          <Label htmlFor="task-date" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-50">Target Timeline</Label>
                           <Input id="task-date" type="date" className="rounded-xl h-12 bg-muted/30" />
                         </div>
                         <Button className="w-full h-14 rounded-2xl font-bold text-lg" onClick={() => {
@@ -1183,7 +1183,7 @@ export default function App() {
                     
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="perf-user-name" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Designation Name</Label>
+                        <Label htmlFor="perf-user-name" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-50">Designation Name</Label>
                         <Input 
                           id="perf-user-name" 
                           value={userName} 
@@ -1197,7 +1197,7 @@ export default function App() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="perf-user-title" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Professional Rank / Subtitle</Label>
+                        <Label htmlFor="perf-user-title" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-50">Professional Rank / Subtitle</Label>
                         <Input 
                           id="perf-user-title" 
                           defaultValue={localStorage.getItem('pandior_title') || 'Pro Planner'} 
