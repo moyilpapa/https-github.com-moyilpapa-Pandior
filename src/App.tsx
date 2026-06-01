@@ -502,9 +502,9 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-muted/40 rounded-2xl border border-border/50">
-              <Flame size={16} className="text-rose-500 animate-bounce" />
-              <span className="text-sm font-bold tracking-tight">{streak} Daily Streak</span>
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 dark:border-emerald-800/30 shadow-[0_0_12px_rgba(16,185,129,0.05)]">
+              <Flame size={16} className="text-emerald-600 dark:text-emerald-500 animate-pulse" />
+              <span className="text-sm font-bold tracking-tight text-emerald-600 dark:text-emerald-500">{streak} Daily Streak</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -581,11 +581,13 @@ export default function App() {
                         <Sparkles size={180} />
                       </div>
                       <div className="relative z-10">
-                        <Badge className="bg-primary/20 text-primary border-none mb-6 px-4 py-1.5 text-[10px] uppercase tracking-widest font-black">Authorized Access</Badge>
+                        <Badge className="bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20 dark:border-emerald-800/30 mb-6 px-4 py-1.5 text-[10px] uppercase tracking-widest font-black flex items-center gap-1.5 w-fit">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-600 animate-pulse" /> Authorized Access
+                        </Badge>
                         <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Good Morning, {userName.split(' ')[0]}.</h2>
                         <p className="text-lg text-muted-foreground/80 max-w-lg leading-relaxed font-medium">
                           You have {upcomingEvents.length} assignments prioritized for today. 
-                          Your current focus efficiency is at 94% — the highest this week.
+                          Your current focus efficiency is at <span className="text-emerald-600 dark:text-emerald-500 font-extrabold bg-emerald-500/10 dark:bg-emerald-950/45 px-2 py-0.5 rounded-lg border border-emerald-500/20 dark:border-emerald-800/35 shadow-[0_0_12px_rgba(16,185,129,0.05)]">94%</span> — the highest this week.
                         </p>
                         <div className="flex items-center gap-4 mt-10">
                            <Button 
@@ -624,8 +626,8 @@ export default function App() {
                                    <motion.div initial={{ width: 0 }} animate={{ width: `${xp % 100}%` }} className="h-full bg-primary" />
                                 </div>
                              </div>
-                             <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
-                                <p className="text-[11px] font-medium leading-relaxed italic opacity-80 italic">
+                             <div className="p-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/10 dark:border-emerald-800/20 text-emerald-600 dark:text-emerald-500">
+                                <p className="text-[11px] font-medium leading-relaxed italic opacity-85">
                                    "Precision is the foundation of excellence. Synchronization active."
                                 </p>
                              </div>
@@ -649,9 +651,9 @@ export default function App() {
                           {upcomingEvents.slice(0, 3).map(event => (
                             <div key={event.id} className="p-5 rounded-2xl hover:bg-muted/30 border border-transparent hover:border-border/50 smooth-transition flex gap-6 group">
                                <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center font-bold border transition-all duration-300 ${
-                                 event.category === 'work' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                                 event.category === 'personal' ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' :
-                                 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+                                 event.category === 'work' ? 'bg-primary/10 text-primary border-primary/20' :
+                                 event.category === 'personal' ? 'bg-secondary text-secondary-foreground border-border' :
+                                 'bg-muted/40 text-muted-foreground border-border'
                                } group-hover:scale-105 group-hover:shadow-lg`}>
                                   <span className="text-[10px] uppercase leading-none opacity-60 mb-1">{format(event.start, 'MMM')}</span>
                                   <span className="text-2xl leading-none tracking-tighter">{format(event.start, 'dd')}</span>
@@ -698,9 +700,9 @@ export default function App() {
                               }}
                             >
                                <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${
-                                 task.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20' : 'border-muted-foreground/30 group-hover:border-primary'
+                                  task.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/30' : 'border-muted-foreground/30 hover:border-primary group-hover:border-primary'
                                }`}>
-                                  {task.completed && <Check size={18} strokeWidth={4} />}
+                                  {task.completed && <Check size={18} strokeWidth={4} className="text-primary-foreground" />}
                                </div>
                                <div className="flex-1 overflow-hidden">
                                   <span className={`block font-bold text-sm truncate ${task.completed ? 'line-through text-muted-foreground opacity-50' : 'text-foreground'}`}>
@@ -821,14 +823,14 @@ export default function App() {
                       className={`p-6 rounded-3xl glass-card border border-border/50 smooth-transition group flex items-center gap-6 ${task.completed ? 'opacity-50' : ''}`}
                     >
                       <div 
-                        className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${task.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg' : 'border-muted-foreground/30 hover:border-primary group-hover:scale-110'}`}
+                        className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${task.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/30' : 'border-muted-foreground/30 hover:border-primary group-hover:scale-110'}`}
                         onClick={() => {
                           setTasks(prev => prev.map(t => {
                             if (t.id === task.id) {
                               const newCompleted = !t.completed;
                               if (newCompleted) {
                                 addXp(20);
-                                toast.success("+20 XP Synchronized");
+                                  toast.success("+20 XP Synchronized");
                               }
                               return { ...t, completed: newCompleted };
                             }
@@ -836,7 +838,7 @@ export default function App() {
                           }));
                         }}
                       >
-                        {task.completed && <Check size={20} strokeWidth={4} />}
+                        {task.completed && <Check size={20} strokeWidth={4} className="text-primary-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className={`text-lg font-bold tracking-tight ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</h4>
@@ -909,11 +911,11 @@ export default function App() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { name: 'sector_alpha.pdf', size: '2.4 MB', type: 'PDF', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
-                    { name: 'tactical_core.zip', size: '15.8 MB', type: 'ARCHIVE', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-                    { name: 'intel_report.docx', size: '45 KB', type: 'DOC', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' },
-                    { name: 'encrypted_comms.pdf', size: '1.2 MB', type: 'PDF', color: 'bg-red-500/10 text-red-500 border-red-500/20' },
-                    { name: 'manifest_v3.json', size: '12 KB', type: 'DATA', color: 'bg-green-500/10 text-green-500 border-green-500/20' }
+                    { name: 'sector_alpha.pdf', size: '2.4 MB', type: 'PDF', color: 'bg-secondary text-secondary-foreground border-border' },
+                    { name: 'tactical_core.zip', size: '15.8 MB', type: 'ARCHIVE', color: 'bg-secondary text-secondary-foreground border-border' },
+                    { name: 'intel_report.docx', size: '45 KB', type: 'DOC', color: 'bg-secondary text-secondary-foreground border-border' },
+                    { name: 'encrypted_comms.pdf', size: '1.2 MB', type: 'PDF', color: 'bg-secondary text-secondary-foreground border-border' },
+                    { name: 'manifest_v3.json', size: '12 KB', type: 'DATA', color: 'bg-primary/15 text-primary border-primary/35' }
                   ].map((file, i) => (
                     <motion.div 
                       key={i}
@@ -971,9 +973,9 @@ export default function App() {
                               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                  <div className="flex items-center gap-4">
                                     <div className={`p-3 rounded-xl ${
-                                      event.category === 'work' ? 'bg-blue-500/10 text-blue-500' :
-                                      event.category === 'personal' ? 'bg-purple-500/10 text-purple-500' :
-                                      'bg-orange-500/10 text-orange-500'
+                                      event.category === 'work' ? 'bg-primary/10 text-primary' :
+                                      event.category === 'personal' ? 'bg-secondary text-secondary-foreground border border-border/40' :
+                                      'bg-muted/45 text-muted-foreground border border-border/40'
                                     }`}>
                                        <History size={20} />
                                     </div>
