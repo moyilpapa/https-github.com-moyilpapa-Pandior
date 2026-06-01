@@ -3,5 +3,8 @@
   "description": "An AI-powered event scheduling app with voice input, smart calendar integration, and gamified reminders.",
   "requestFramePermissions": [
     "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
 }

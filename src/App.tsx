@@ -22,7 +22,7 @@ import {
   Upload,
   Trophy,
   Flame,
-  Sparkles,
+  Compass,
   Sun,
   Moon,
   Video,
@@ -67,8 +67,22 @@ export default function App() {
   const [events, setEvents] = useState<Event[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Sync sidebar open state on mount and update with screen size
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleResize = () => {
+        setIsSidebarOpen(window.innerWidth >= 768);
+      };
+      handleResize(); // Call on mount
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [userName, setUserName] = useState(() => localStorage.getItem('pandior_user_name') || 'Jedi Amos');
+  const [userName, setUserName] = useState(() => localStorage.getItem('pandior_user_name') || '');
+  const [isOnboarding, setIsOnboarding] = useState(() => !localStorage.getItem('pandior_user_name'));
+  const [tempName, setTempName] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [streak, setStreak] = useState(() => Number(localStorage.getItem('pandior_streak')) || 5);
   const [xp, setXp] = useState(() => Number(localStorage.getItem('pandior_xp')) || 0);
@@ -87,86 +101,168 @@ export default function App() {
     google: Number(localStorage.getItem('pandior_conn_google')) === 1,
     zoom: Number(localStorage.getItem('pandior_conn_zoom')) === 1
   });
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Persistence effects
+  // Persistence and server-side DB hydration effects
   useEffect(() => {
-    try {
-      const savedEvents = localStorage.getItem('pandior_events');
-      const savedTasks = localStorage.getItem('pandior_tasks');
-      const today = new Date();
-      
-      if (savedEvents) {
-        const parsed = JSON.parse(savedEvents);
-        if (Array.isArray(parsed)) {
-          setEvents(parsed.map((e: any) => ({
-            ...e,
-            start: new Date(e.start),
-            end: new Date(e.end)
-          })));
-        }
-      } else {
-        // Initial mock data if nothing saved
-        setEvents([
-          {
-            id: '1',
-            title: 'Team Sync & Strategy',
-            start: new Date(today.setHours(10, 0, 0, 0)),
-            end: new Date(today.setHours(11, 0, 0, 0)),
-            category: 'meeting',
-            priority: 'medium',
-            description: 'Discuss Q2 goals and roadmap.'
-          },
-          {
-            id: '2',
-            title: 'Design Review',
-            start: new Date(addDays(today, 1).setHours(14, 0, 0, 0)),
-            end: new Date(addDays(today, 1).setHours(15, 30, 0, 0)),
-            category: 'work',
-            priority: 'medium',
+    const hydrateData = async () => {
+      try {
+        const today = new Date();
+        const response = await fetch('/api/db');
+        if (response.ok) {
+          const dbData = await response.json();
+          
+          if (dbData.user) {
+            if (dbData.user.name) {
+              setUserName(dbData.user.name);
+              setIsOnboarding(false);
+            }
+            if (dbData.user.streak) setStreak(dbData.user.streak);
+            if (dbData.user.xp !== undefined) setXp(dbData.user.xp);
+            if (dbData.user.level) setLevel(dbData.user.level);
           }
-        ]);
-      }
 
-      if (savedTasks) {
-        const parsed = JSON.parse(savedTasks);
-        if (Array.isArray(parsed)) {
-          setTasks(parsed.map((t: any) => ({
-            ...t,
-            dueDate: new Date(t.dueDate)
-          })));
+          if (dbData.events && dbData.events.length > 0) {
+            setEvents(dbData.events.map((e: any) => ({
+              ...e,
+              start: new Date(e.start),
+              end: new Date(e.end)
+            })));
+          } else {
+            const savedEvents = localStorage.getItem('pandior_events');
+            if (savedEvents) {
+              const parsed = JSON.parse(savedEvents);
+              if (Array.isArray(parsed)) {
+                setEvents(parsed.map((e: any) => ({
+                  ...e,
+                  start: new Date(e.start),
+                  end: new Date(e.end)
+                })));
+              }
+            } else {
+              setEvents([
+                {
+                  id: '1',
+                  title: 'Team Sync & Strategy',
+                  start: new Date(today.setHours(10, 0, 0, 0)),
+                  end: new Date(today.setHours(11, 0, 0, 0)),
+                  category: 'meeting',
+                  priority: 'medium',
+                  description: 'Discuss Q2 goals and roadmap.'
+                },
+                {
+                  id: '2',
+                  title: 'Design Review',
+                  start: new Date(addDays(today, 1).setHours(14, 0, 0, 0)),
+                  end: new Date(addDays(today, 1).setHours(15, 30, 0, 0)),
+                  category: 'work',
+                  priority: 'medium',
+                }
+              ]);
+            }
+          }
+
+          if (dbData.tasks && dbData.tasks.length > 0) {
+            setTasks(dbData.tasks.map((t: any) => ({
+              ...t,
+              dueDate: new Date(t.dueDate)
+            })));
+          } else {
+            const savedTasks = localStorage.getItem('pandior_tasks');
+            if (savedTasks) {
+              const parsed = JSON.parse(savedTasks);
+              if (Array.isArray(parsed)) {
+                setTasks(parsed.map((t: any) => ({
+                  ...t,
+                  dueDate: new Date(t.dueDate)
+                })));
+              }
+            } else {
+              setTasks([
+                { id: '1', title: 'Review project spec', dueDate: addDays(today, 2), completed: false },
+                { id: '2', title: 'Update design assets', dueDate: today, completed: true },
+                { id: '3', title: 'Send weekly report', dueDate: addDays(today, 1), completed: false },
+              ]);
+            }
+          }
         }
-      } else {
-        setTasks([
-          { id: '1', title: 'Review project spec', dueDate: addDays(today, 2), completed: false },
-          { id: '2', title: 'Update design assets', dueDate: today, completed: true },
-          { id: '3', title: 'Send weekly report', dueDate: addDays(today, 1), completed: false },
+      } catch (err) {
+        console.error("Failed to load backend DB scheduler data, using localStorage fallback:", err);
+        // localStorage Fallback
+        const savedEvents = localStorage.getItem('pandior_events');
+        const savedTasks = localStorage.getItem('pandior_tasks');
+        const today = new Date();
+        
+        if (savedEvents) {
+          const parsed = JSON.parse(savedEvents);
+          if (Array.isArray(parsed)) {
+            setEvents(parsed.map((e: any) => ({
+              ...e,
+              start: new Date(e.start),
+              end: new Date(e.end)
+            })));
+          }
+        }
+        if (savedTasks) {
+          const parsed = JSON.parse(savedTasks);
+          if (Array.isArray(parsed)) {
+            setTasks(parsed.map((t: any) => ({
+              ...t,
+              dueDate: new Date(t.dueDate)
+            })));
+          }
+        }
+      } finally {
+        setSuggestions([
+          { title: 'Focus Time', reason: 'You have a 3-hour gap on Wednesday afternoon.', suggestedTime: 'Wed, 2:00 PM' },
+          { title: 'Reschedule Sync', reason: 'Conflict detected with Design Review.', suggestedTime: 'Thu, 10:00 AM' }
         ]);
+        setIsHydrated(true);
       }
-
-      setSuggestions([
-        { title: 'Focus Time', reason: 'You have a 3-hour gap on Wednesday afternoon.', suggestedTime: 'Wed, 2:00 PM' },
-        { title: 'Reschedule Sync', reason: 'Conflict detected with Design Review.', suggestedTime: 'Thu, 10:00 AM' }
-      ]);
-    } catch (error) {
-      console.error("Error loading saved data:", error);
-    }
+    };
+    hydrateData();
   }, []);
 
+  // Save changes to backend database when hydrated
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem('pandior_events', JSON.stringify(events));
-  }, [events]);
+    fetch('/api/db', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ events })
+    }).catch(err => console.error("Failed syncing events to DB:", err));
+  }, [events, isHydrated]);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem('pandior_tasks', JSON.stringify(tasks));
-  }, [tasks]);
+    fetch('/api/db', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tasks })
+    }).catch(err => console.error("Failed syncing tasks to DB:", err));
+  }, [tasks, isHydrated]);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem('pandior_streak', streak.toString());
-  }, [streak]);
+    fetch('/api/db', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: { streak } })
+    }).catch(err => console.error("Failed syncing streak to DB:", err));
+  }, [streak, isHydrated]);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem('pandior_xp', xp.toString());
     localStorage.setItem('pandior_level', level.toString());
+    fetch('/api/db', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: { xp, level } })
+    }).catch(err => console.error("Failed syncing gaming level to DB:", err));
     
     // Level up logic: 100 XP per level
     if (xp >= level * 100) {
@@ -177,7 +273,17 @@ export default function App() {
       });
       haptics.impact();
     }
-  }, [xp, level]);
+  }, [xp, level, isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated || !userName) return;
+    localStorage.setItem('pandior_user_name', userName);
+    fetch('/api/db', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user: { name: userName } })
+    }).catch(err => console.error("Failed syncing username to DB:", err));
+  }, [userName, isHydrated]);
 
   // Real streak logic
   useEffect(() => {
@@ -231,6 +337,7 @@ export default function App() {
 
   // Voice recognition setup
   const recognitionRef = useRef<any>(null);
+  const isListeningRef = useRef(false);
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -240,9 +347,15 @@ export default function App() {
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
 
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+        isListeningRef.current = true;
+      };
+
       recognitionRef.current.onresult = async (event: any) => {
         const transcript = event.results[0][0].transcript;
         setIsListening(false);
+        isListeningRef.current = false;
         toast.info(`Heard: "${transcript}"`);
         
         try {
@@ -255,14 +368,18 @@ export default function App() {
 
       recognitionRef.current.onend = () => {
         setIsListening(false);
+        isListeningRef.current = false;
       };
 
       recognitionRef.current.onerror = (event: any) => {
         setIsListening(false);
+        isListeningRef.current = false;
         if (event.error === 'not-allowed') {
           toast.error("Microphone access denied. Please enable it in settings.");
         } else if (event.error === 'network') {
           toast.error("Network error during speech recognition.");
+        } else if (event.error === 'aborted') {
+          // No toast for user abort
         } else {
           toast.error(`Speech recognition error: ${event.error}`);
         }
@@ -271,7 +388,11 @@ export default function App() {
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // ignore
+        }
       }
     };
   }, []);
@@ -343,19 +464,39 @@ export default function App() {
       return;
     }
 
-    if (isListening) {
-      recognitionRef.current?.stop();
+    if (isListeningRef.current) {
+      try {
+        recognitionRef.current?.stop();
+      } catch (e) {
+        // ignore
+      }
       setIsListening(false);
+      isListeningRef.current = false;
     } else {
       try {
         recognitionRef.current?.start();
         setIsListening(true);
+        isListeningRef.current = true;
       } catch (error) {
-        console.error("Failed to start speech recognition:", error);
-        // Sometimes start() fails if it's already running or in a weird state
+        console.warn("Failed to start speech recognition (likely already running):", error);
         setIsListening(false);
+        isListeningRef.current = false;
       }
     }
+  };
+
+  const handleOnboardingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = tempName.trim();
+    if (!trimmedName) {
+      toast.error("Please enter your display name to begin.");
+      return;
+    }
+    setUserName(trimmedName);
+    localStorage.setItem('pandior_user_name', trimmedName);
+    setIsOnboarding(false);
+    toast.success(`Welcome to Pandior, ${trimmedName}!`, { icon: '✨' });
+    haptics.impact();
   };
 
   const upcomingEvents = events
@@ -372,8 +513,87 @@ export default function App() {
       <Toaster position="top-right" />
       <ScrollToTop activeTab={activeTab} />
       
+      {/* Onboarding Flow Modal */}
+      <AnimatePresence>
+        {isOnboarding && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-background/85 backdrop-blur-2xl flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              transition={{ type: "spring", stiffness: 220, damping: 26 }}
+              className="w-full max-w-md p-8 md:p-10 rounded-[2.5rem] glass-card border border-border/60 flex flex-col space-y-8 shadow-2xl relative overflow-hidden"
+            >
+              {/* Subtle background glow effect */}
+              <div className="absolute -top-40 -left-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-primary/20 rounded-3xl flex items-center justify-center text-primary border border-primary/20 shadow-lg shadow-primary/10 animate-pulse">
+                  <Compass size={32} />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-transparent">
+                    Welcome to Pandior
+                  </h2>
+                  <p className="text-sm text-muted-foreground max-w-xs font-medium">
+                    Your stunning workspace with daily multi-agent planner tools. Let's customize your workspace.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleOnboardingSubmit} className="space-y-6">
+                <div className="space-y-2.5">
+                  <Label 
+                    htmlFor="onboarding-name" 
+                    className="text-xs font-black uppercase tracking-widest text-[#a1a1aa] dark:text-zinc-400"
+                  >
+                    Enter Your Name
+                  </Label>
+                  <Input 
+                    id="onboarding-name" 
+                    type="text"
+                    autoFocus
+                    value={tempName} 
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="rounded-xl h-12 bg-white/5 border border-white/15 focus:border-primary focus:ring-1 focus:ring-primary text-foreground text-base tracking-wide"
+                    placeholder="Jedi Amos" 
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2"
+                >
+                  Enter Workspace <Check size={16} />
+                </Button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Dynamic Clock Background */}
       <ClockBackground theme={theme} />
+      
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+          />
+        )}
+      </AnimatePresence>
       
       {/* Sidebar */}
       <motion.aside 
@@ -385,17 +605,9 @@ export default function App() {
         transition={{ type: "spring", stiffness: 180, damping: 25, mass: 0.9 }}
         className={`fixed md:relative h-full border-r border-white/10 dark:border-white/5 bg-white/5 dark:bg-black/15 backdrop-blur-xl flex flex-col z-50`}
       >
-        {/* Mobile Overlay */}
-        {isSidebarOpen && (
-          <div 
-            className="md:hidden fixed inset-0 bg-black/10 backdrop-blur-sm z-[-1]" 
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        
         <div className="p-8 flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/20 rounded-2xl flex items-center justify-center text-primary border border-primary/20">
-            <Sparkles size={24} className="animate-pulse" />
+            <Compass size={24} className="animate-pulse" />
           </div>
           {isSidebarOpen && (
             <motion.h1 
@@ -488,7 +700,7 @@ export default function App() {
                variant="ghost" 
                size="icon" 
                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-               className="hover:bg-muted/50 rounded-xl"
+               className="hidden md:inline-flex hover:bg-muted/50 rounded-xl"
             >
               <Menu size={20} />
             </Button>
@@ -529,28 +741,16 @@ export default function App() {
               className="hidden sm:flex items-center"
             >
               <Button
-                variant="outline"
+                variant={isListening ? "secondary" : "ghost"}
+                size="icon"
                 onClick={toggleVoice}
-                className={`h-11 px-4 gap-2.5 rounded-2xl border transition-all duration-300 font-bold text-sm ${
+                className={`h-11 w-11 rounded-xl transition-all duration-300 ${
                   isListening 
-                    ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse' 
-                    : 'bg-muted/30 border-border/80 text-foreground hover:bg-muted/50 hover:border-primary/30'
+                    ? 'bg-red-500/10 text-red-600 dark:text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]' 
+                    : 'hover:bg-muted/50'
                 }`}
               >
-                {isListening ? (
-                  <>
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                    </span>
-                    <span className="animate-pulse">Listening...</span>
-                  </>
-                ) : (
-                  <>
-                    <Mic size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                    <span>VOi</span>
-                  </>
-                )}
+                <Mic size={20} className={isListening ? "text-red-500 animate-pulse" : "text-muted-foreground group-hover:text-primary transition-colors"} />
               </Button>
             </motion.div>
 
@@ -591,13 +791,12 @@ export default function App() {
                     <>
                       {/* Invisible backdrop to dismiss dropdown */}
                       <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
-                      
-                      <motion.div
+                                   <motion.div
                         initial={{ opacity: 0, y: 15, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 15, scale: 0.95 }}
                         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute right-0 mt-3 w-80 md:w-96 rounded-3xl border border-border/80 bg-popover text-popover-foreground shadow-2xl p-4 z-50 overflow-hidden backdrop-blur-xl"
+                        className="fixed top-20 right-4 left-4 md:absolute md:top-auto md:left-auto md:right-0 md:mt-3 md:w-96 rounded-3xl border border-border/80 bg-popover text-popover-foreground shadow-2xl p-4 z-50 overflow-hidden backdrop-blur-xl"
                       >
                         <div className="flex items-center justify-between pb-3 border-b border-border/50 mb-3">
                           <h4 className="font-bold tracking-tight text-sm">Notifications</h4>
@@ -615,17 +814,17 @@ export default function App() {
                             )}
                             <button 
                               onClick={() => {
-                                setNotificationsList([]);
-                                haptics.impact();
-                              }}
-                              className="text-xs text-muted-foreground hover:text-foreground transition-colors font-semibold"
-                            >
-                              Clear
-                            </button>
+                                  setNotificationsList([]);
+                                  haptics.impact();
+                                }}
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors font-semibold"
+                              >
+                                Clear
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                          
+                          <div className="space-y-2 max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                           {notificationsList.length === 0 ? (
                             <div className="py-8 text-center text-xs text-muted-foreground">
                               All cleared. No active notifications.
@@ -677,6 +876,15 @@ export default function App() {
               >
                 <Settings size={20} />
               </Button>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                className="md:hidden hover:bg-muted/50 rounded-xl"
+              >
+                <Menu size={20} />
+              </Button>
             </div>
           </div>
         </header>
@@ -727,12 +935,9 @@ export default function App() {
                     {/* Welcome Card */}
                     <div className="col-span-12 lg:col-span-8 p-10 rounded-3xl glass-card relative overflow-hidden group min-h-[340px] flex flex-col justify-center">
                       <div className="absolute top-0 right-0 p-12 text-primary/5 group-hover:text-primary/10 smooth-transition">
-                        <Sparkles size={180} />
+                        <Compass size={180} />
                       </div>
                       <div className="relative z-10">
-                        <Badge className="bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20 dark:border-emerald-800/30 mb-6 px-4 py-1.5 text-[10px] uppercase tracking-widest font-black flex items-center gap-1.5 w-fit">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-600 animate-pulse" /> Authorized Access
-                        </Badge>
                         <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Good Morning, {userName.split(' ')[0]}.</h2>
                         <p className="text-lg text-muted-foreground/80 max-w-lg leading-relaxed font-medium">
                           You have {upcomingEvents.length} assignments prioritized for today. 
@@ -745,13 +950,7 @@ export default function App() {
                            >
                               Review Deployment
                            </Button>
-                           <Button 
-                             variant="secondary"
-                             className="rounded-2xl h-14 px-8 text-base font-bold bg-muted/50 border border-border/50"
-                             onClick={toggleVoice}
-                           >
-                              <Mic className="mr-2" size={18} /> Voice Synthesis
-                           </Button>
+                           
                         </div>
                       </div>
                     </div>
