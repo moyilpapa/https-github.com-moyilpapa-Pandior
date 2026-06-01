@@ -75,6 +75,12 @@ export default function App() {
   const [level, setLevel] = useState(() => Number(localStorage.getItem('pandior_level')) || 1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [notificationsList, setNotificationsList] = useState<any[]>([
+    { id: '1', title: 'Daily Streak Synced', description: 'Streak multiplier active. You are on a 5-day streak!', time: 'Just now', read: false },
+    { id: '2', title: 'Vault Sync Complete', description: 'Secure assets and data vaults integrated successfully.', time: '10m ago', read: false },
+    { id: '3', title: 'Task Completed', description: 'Task "Update design assets" marked complete. +15 XP', time: '1h ago', read: true }
+  ]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [connectedAccounts, setConnectedAccounts] = useState<{google: boolean, zoom: boolean}>({
@@ -201,6 +207,19 @@ export default function App() {
     haptics.impact();
   };
 
+  const addNotification = (title: string, description: string) => {
+    setNotificationsList(prev => [
+      {
+        id: Math.random().toString(),
+        title,
+        description,
+        time: 'Just now',
+        read: false
+      },
+      ...prev
+    ]);
+  };
+
   // Theme effect
   useEffect(() => {
     const root = window.document.documentElement;
@@ -284,6 +303,7 @@ export default function App() {
         setEvents(prev => [...prev, newEvent]);
         toast.success(result.message || "Event scheduled!");
         notifications.schedule("Pandior: New Event", `Scheduled: ${newEvent.title}`);
+        addNotification("Calendar Event Synced", `Scheduled: ${newEvent.title}`);
       } else if (result.type === 'task' && result.task) {
         const taskDue = parseISO(result.task.dueDate);
 
@@ -305,6 +325,7 @@ export default function App() {
         setTasks(prev => [...prev, newTask]);
         toast.success(result.message || "Task added!");
         notifications.schedule("Pandior: New Task", `Added: ${newTask.title}`);
+        addNotification("Task Synced To Dashboard", `Added: ${newTask.title}`);
       } else {
         toast.info(result.message);
       }
@@ -361,7 +382,7 @@ export default function App() {
           width: isSidebarOpen ? 280 : 80,
           x: (window.innerWidth < 768 && !isSidebarOpen) ? -280 : 0
         }}
-        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+        transition={{ type: "spring", stiffness: 180, damping: 25, mass: 0.9 }}
         className={`fixed md:relative h-full border-r border-white/10 dark:border-white/5 bg-white/5 dark:bg-black/15 backdrop-blur-xl flex flex-col z-50`}
       >
         {/* Mobile Overlay */}
@@ -502,10 +523,36 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-emerald-500/10 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/20 dark:border-emerald-800/30 shadow-[0_0_12px_rgba(16,185,129,0.05)]">
-              <Flame size={16} className="text-emerald-600 dark:text-emerald-500 animate-pulse" />
-              <span className="text-sm font-bold tracking-tight text-emerald-600 dark:text-emerald-500">{streak} Daily Streak</span>
-            </div>
+            <motion.div 
+              whileHover={{ scale: 1.02 }} 
+              whileTap={{ scale: 0.98 }}
+              className="hidden sm:flex items-center"
+            >
+              <Button
+                variant="outline"
+                onClick={toggleVoice}
+                className={`h-11 px-4 gap-2.5 rounded-2xl border transition-all duration-300 font-bold text-sm ${
+                  isListening 
+                    ? 'bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse' 
+                    : 'bg-muted/30 border-border/80 text-foreground hover:bg-muted/50 hover:border-primary/30'
+                }`}
+              >
+                {isListening ? (
+                  <>
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                    <span className="animate-pulse">Listening...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                    <span>VOi</span>
+                  </>
+                )}
+              </Button>
+            </motion.div>
 
             <div className="flex items-center gap-2">
               <Button 
@@ -517,10 +564,111 @@ export default function App() {
                 <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
               </Button>
-              <Button variant="ghost" size="icon" className="relative rounded-xl hover:bg-muted/50">
-                <Bell size={20} />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-4 ring-background"></span>
-              </Button>
+              
+              <div className="relative">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => {
+                      setIsNotificationsOpen(p => !p);
+                      haptics.impact();
+                    }}
+                    className={`relative rounded-xl hover:bg-muted/50 transition-all ${isNotificationsOpen ? 'bg-primary/10 text-primary' : ''}`}
+                  >
+                    <Bell size={20} className={isNotificationsOpen ? "transition-all" : (notificationsList.some(n => !n.read) ? "text-emerald-500 dark:text-emerald-400 animate-pulse" : "text-muted-foreground transition-all")} />
+                    {notificationsList.some(n => !n.read) && (
+                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 animate-ping opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                    )}
+                  </Button>
+                </motion.div>
+                
+                <AnimatePresence>
+                  {isNotificationsOpen && (
+                    <>
+                      {/* Invisible backdrop to dismiss dropdown */}
+                      <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
+                      
+                      <motion.div
+                        initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute right-0 mt-3 w-80 md:w-96 rounded-3xl border border-border/80 bg-popover text-popover-foreground shadow-2xl p-4 z-50 overflow-hidden backdrop-blur-xl"
+                      >
+                        <div className="flex items-center justify-between pb-3 border-b border-border/50 mb-3">
+                          <h4 className="font-bold tracking-tight text-sm">Notifications</h4>
+                          <div className="flex gap-2">
+                            {notificationsList.some(n => !n.read) && (
+                              <button 
+                                onClick={() => {
+                                  setNotificationsList(prev => prev.map(n => ({ ...n, read: true })));
+                                  haptics.impact();
+                                }}
+                                className="text-xs text-primary/85 hover:text-primary transition-colors font-semibold"
+                              >
+                                Mark all as read
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => {
+                                setNotificationsList([]);
+                                haptics.impact();
+                              }}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors font-semibold"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                          {notificationsList.length === 0 ? (
+                            <div className="py-8 text-center text-xs text-muted-foreground">
+                              All cleared. No active notifications.
+                            </div>
+                          ) : (
+                            notificationsList.map(n => (
+                              <div 
+                                key={n.id} 
+                                onClick={() => {
+                                  setNotificationsList(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item));
+                                  haptics.impact();
+                                }}
+                                className={`p-3 rounded-2xl transition-all duration-300 border text-left cursor-pointer relative group ${
+                                  n.read 
+                                    ? 'bg-transparent border-transparent opacity-60' 
+                                    : 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/15 hover:border-emerald-500/30'
+                                }`}
+                              >
+                                {!n.read && (
+                                  <span className="absolute top-3.5 right-3 flex h-1.5 w-1.5">
+                                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 animate-ping opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                  </span>
+                                )}
+                                <h5 className={`text-xs font-black tracking-tight ${n.read ? 'text-muted-foreground/80' : 'text-foreground'}`}>
+                                  {n.title}
+                                </h5>
+                                <p className="text-[11px] text-muted-foreground/90 mt-1 leading-relaxed">
+                                  {n.description}
+                                </p>
+                                <span className="block text-[9px] text-muted-foreground/50 mt-2 font-mono">
+                                  {n.time}
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -570,9 +718,10 @@ export default function App() {
                 {activeTab === 'dashboard' && (
                   <motion.div 
                     key="dashboard"
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                     className="bento-grid"
                   >
                     {/* Welcome Card */}
@@ -696,6 +845,7 @@ export default function App() {
                                 if (!task.completed) {
                                   addXp(20);
                                   toast.success("+20 XP Synchronized");
+                                  addNotification("Objective Completed", `Task "${task.title}" completed. +20 XP`);
                                 }
                               }}
                             >
@@ -720,9 +870,10 @@ export default function App() {
             {activeTab === 'calendar' && (
               <motion.div 
                 key="calendar"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                 className="h-full flex flex-col space-y-8"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -756,7 +907,7 @@ export default function App() {
                         initial={{ opacity: 0, scale: 0.99, filter: "blur(4px)" }}
                         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                         exit={{ opacity: 0, scale: 0.99, filter: "blur(4px)" }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                         className="absolute inset-0 grid grid-cols-7 grid-rows-6"
                       >
                         {renderCalendarDays(currentDate, events)}
@@ -770,9 +921,10 @@ export default function App() {
             {activeTab === 'tasks' && (
               <motion.div 
                 key="tasks"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                 className="max-w-4xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
@@ -790,11 +942,11 @@ export default function App() {
                       </DialogHeader>
                       <div className="space-y-6 py-6">
                         <div className="space-y-2">
-                          <Label htmlFor="task-title" className="text-xs font-black uppercase tracking-widest opacity-60">Objective Designation</Label>
+                          <Label htmlFor="task-title" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Objective Designation</Label>
                           <Input id="task-title" placeholder="Define your next target..." className="rounded-xl h-12 bg-muted/30" />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="task-date" className="text-xs font-black uppercase tracking-widest opacity-60">Target Timeline</Label>
+                          <Label htmlFor="task-date" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Target Timeline</Label>
                           <Input id="task-date" type="date" className="rounded-xl h-12 bg-muted/30" />
                         </div>
                         <Button className="w-full h-14 rounded-2xl font-bold text-lg" onClick={() => {
@@ -808,6 +960,7 @@ export default function App() {
                               completed: false
                             }]);
                             toast.success("Objective Synchronized");
+                            addNotification("Objective Established", `Objective: ${title}`);
                           }
                         }}>Establish Link</Button>
                       </div>
@@ -830,7 +983,8 @@ export default function App() {
                               const newCompleted = !t.completed;
                               if (newCompleted) {
                                 addXp(20);
-                                  toast.success("+20 XP Synchronized");
+                                toast.success("+20 XP Synchronized");
+                                addNotification("Objective Completed", `Task "${t.title}" completed. +20 XP`);
                               }
                               return { ...t, completed: newCompleted };
                             }
@@ -894,9 +1048,10 @@ export default function App() {
             {activeTab === 'files' && (
               <motion.div 
                 key="files"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                 className="max-w-5xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
@@ -943,9 +1098,10 @@ export default function App() {
             {activeTab === 'history' && (
               <motion.div 
                 key="history"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                 className="max-w-4xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
@@ -1009,9 +1165,10 @@ export default function App() {
             {activeTab === 'settings' && (
               <motion.div 
                 key="settings"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                 className="max-w-4xl mx-auto space-y-8 pb-10"
               >
                 <div>
@@ -1026,7 +1183,7 @@ export default function App() {
                     
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="perf-user-name" className="text-xs font-black uppercase tracking-widest opacity-60">Designation Name</Label>
+                        <Label htmlFor="perf-user-name" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Designation Name</Label>
                         <Input 
                           id="perf-user-name" 
                           value={userName} 
@@ -1040,7 +1197,7 @@ export default function App() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="perf-user-title" className="text-xs font-black uppercase tracking-widest opacity-60">Professional Rank / Subtitle</Label>
+                        <Label htmlFor="perf-user-title" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-950">Professional Rank / Subtitle</Label>
                         <Input 
                           id="perf-user-title" 
                           defaultValue={localStorage.getItem('pandior_title') || 'Pro Planner'} 
