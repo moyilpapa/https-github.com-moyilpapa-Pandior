@@ -1,11 +1,12 @@
 
+
 # Pandior: Smart AI Event Scheduler 🚀
 
 **Pandior** is a next-generation, AI-powered productivity hub designed to bridge the gap between natural language and structured scheduling. Built with a focus on speed, intelligence, and a premium "3D-glass" aesthetic, Pandior turns your voice and text into actionable calendar events and tasks.
 
 <!-- Replace the image below with a real screenshot of your app once deployed -->
 <img width="1330" height="515" alt="Screenshot 2026-06-01 182903" src="https://github.com/user-attachments/assets/8e967af4-98b3-49fa-bbc7-7dbd701da065" />
-<img width="362" height="553" alt="Screenshot 2026-06-01 182704" src="https://github.com/user-attachments/assets/b4c0f7a2-e108-42d0-becc-b4b0785df3c6" />
+<img width="362" height="553" alt="Screenshot 2026-06-01 182704" src="https://github.com/user-attachments/assets/b4c0f7a2-e108-42d0-becc-b4b0785df3c6" /><img width="1048" height="516" alt="Screenshot 2026-06-01 183820" src="https://github.com/user-attachments/assets/be26b19d-c30b-42cd-a70d-2d9e2070944c" />
 
 
 ## ✨ Key Features
