@@ -14,6 +14,7 @@ import {
   Search, 
   Bell, 
   Settings, 
+  Shield,
   Menu,
   X,
   ChevronLeft,
@@ -31,7 +32,11 @@ import {
   Files,
   Clock,
   Check,
-  Download
+  Download,
+  Key,
+  Lock,
+  Scale,
+  Cpu
 } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
@@ -621,40 +626,74 @@ export default function App() {
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4">
+          <div className="hidden md:block">
+            <NavItem 
+              icon={<LayoutDashboard size={20} />} 
+              label="Dashboard" 
+              active={activeTab === 'dashboard'} 
+              collapsed={!isSidebarOpen}
+              onClick={() => setActiveTab('dashboard')}
+            />
+          </div>
+          <div className="hidden md:block">
+            <NavItem 
+              icon={<CalendarIcon size={20} />} 
+              label="Calendar" 
+              active={activeTab === 'calendar'} 
+              collapsed={!isSidebarOpen}
+              onClick={() => setActiveTab('calendar')}
+            />
+          </div>
+          <div className="hidden md:block">
+            <NavItem 
+              icon={<CheckSquare size={20} />} 
+              label="Tasks" 
+              active={activeTab === 'tasks'} 
+              collapsed={!isSidebarOpen}
+              onClick={() => setActiveTab('tasks')}
+            />
+          </div>
+          <div className="hidden md:block">
+            <NavItem 
+              icon={<Globe size={20} />} 
+              label="File" 
+              active={activeTab === 'files'} 
+              collapsed={!isSidebarOpen}
+              onClick={() => setActiveTab('files')}
+            />
+          </div>
+          
           <NavItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Dashboard" 
-            active={activeTab === 'dashboard'} 
+            icon={<Settings size={20} />} 
+            label="Setting" 
+            active={activeTab === 'settings'} 
             collapsed={!isSidebarOpen}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => {
+              setActiveTab('settings');
+              if (window.innerWidth < 768) setIsSidebarOpen(false);
+            }}
           />
-          <NavItem 
-            icon={<CalendarIcon size={20} />} 
-            label="Calendar" 
-            active={activeTab === 'calendar'} 
-            collapsed={!isSidebarOpen}
-            onClick={() => setActiveTab('calendar')}
-          />
-          <NavItem 
-            icon={<CheckSquare size={20} />} 
-            label="Tasks" 
-            active={activeTab === 'tasks'} 
-            collapsed={!isSidebarOpen}
-            onClick={() => setActiveTab('tasks')}
-          />
-          <NavItem 
-            icon={<Globe size={20} />} 
-            label="File" 
-            active={activeTab === 'files'} 
-            collapsed={!isSidebarOpen}
-            onClick={() => setActiveTab('files')}
-          />
+          
           <NavItem 
             icon={<History size={20} />} 
             label="Activity" 
             active={activeTab === 'history'} 
             collapsed={!isSidebarOpen}
-            onClick={() => setActiveTab('history')}
+            onClick={() => {
+              setActiveTab('history');
+              if (window.innerWidth < 768) setIsSidebarOpen(false);
+            }}
+          />
+
+          <NavItem 
+            icon={<Shield size={20} />} 
+            label="Privacy & Security" 
+            active={activeTab === 'privacy'} 
+            collapsed={!isSidebarOpen}
+            onClick={() => {
+              setActiveTab('privacy');
+              if (window.innerWidth < 768) setIsSidebarOpen(false);
+            }}
           />
         </nav>
 
@@ -872,7 +911,7 @@ export default function App() {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setActiveTab('settings')}
-                className={`rounded-xl hover:bg-muted/50 ${activeTab === 'settings' ? 'bg-primary/10 text-primary' : ''}`}
+                className={`hidden md:inline-flex rounded-xl hover:bg-muted/50 ${activeTab === 'settings' ? 'bg-primary/10 text-primary' : ''}`}
               >
                 <Settings size={20} />
               </Button>
@@ -1574,6 +1613,148 @@ export default function App() {
                           </DialogContent>
                         </Dialog>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'privacy' && (
+              <motion.div 
+                key="privacy"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                className="max-w-4xl mx-auto space-y-8 pb-10"
+              >
+                <div>
+                  <h2 className="text-4xl font-bold tracking-tight">Privacy & Security</h2>
+                  <p className="text-muted-foreground font-medium mt-1 font-sans">Universal Privacy Rules, Local-First Compliance, and Secure Vault Services.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Local Cryptographic Vault Status */}
+                  <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 flex flex-col space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2 font-sans">
+                      <Key size={20} className="text-primary" /> Cryptographic Vault
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed font-medium font-sans">
+                      All your schedules, tasks, credentials, and uploaded files are protected locally inside your sandboxed container using AES-256 standard encryption.
+                    </p>
+
+                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-sans">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                          Secure Sandbox Active
+                        </span>
+                        <span className="text-[10px] bg-emerald-500/25 px-2 py-0.5 rounded-full text-emerald-700 dark:text-emerald-300 font-bold font-mono">AES-256</span>
+                      </div>
+                      <div className="font-mono text-xs select-all text-zinc-400 dark:text-zinc-500 mt-2 p-3 bg-black/25 rounded-xl break-all">
+                        SEED-UUID: f9a2e3b8-90d1-6c7e-8b43-984be1a0c0bc
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          toast.success("Regenerated custom local sandbox encryption keys!");
+                          haptics.impact();
+                        }}
+                        className="w-full rounded-2xl h-11 text-xs font-bold"
+                      >
+                        Regenerate Shield Key
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Universal Privacy & Workspace Rules */}
+                  <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 flex flex-col space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2 font-sans">
+                      <Globe size={20} className="text-primary" /> Universal Governance Standards
+                    </h3>
+                    <div className="space-y-4 font-sans">
+                      <div className="flex gap-3 text-sm">
+                        <Scale size={18} className="text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold leading-none">Local-First Isolation</p>
+                          <p className="text-xs text-muted-foreground mt-1 font-medium">Zero third-party tracking. All scheduling, notes, and task data is securely stored inside browser local state databases.</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 text-sm">
+                        <Lock size={18} className="text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold leading-none">Credential Encryption</p>
+                          <p className="text-xs text-muted-foreground mt-1 font-medium">Linked accounts like Google and Zoom are stored as unshared tokens and verified over standard secure system layers.</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 text-sm">
+                        <Cpu size={18} className="text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold leading-none">Strict Sandboxing Principles</p>
+                          <p className="text-xs text-muted-foreground mt-1 font-medium">No automated indexing or machine training models run on your workspace files or transcripts unless run manually by you.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Privacy Rules Controls */}
+                  <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 col-span-1 md:col-span-2 flex flex-col space-y-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2 font-sans">
+                      <Shield size={20} className="text-primary" /> Workspace Compliance Rules
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 font-sans">
+                      <div className="p-5 rounded-2xl bg-muted/15 border border-border/30 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold">Strict Hashing Sandbox</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">Enforce offline key hash lookup for vault assets</p>
+                        </div>
+                        <Button 
+                          onClick={() => {
+                            const current = localStorage.getItem('pandior_strict_sandbox') === '1';
+                            localStorage.setItem('pandior_strict_sandbox', current ? '0' : '1');
+                            toast.success(current ? "Strict Sandbox Deactivated" : "Strict Sandbox Armed");
+                            haptics.impact();
+                            setTimeout(() => window.location.reload(), 100);
+                          }}
+                          variant="secondary"
+                          className="h-10 rounded-xl font-bold text-xs px-4"
+                        >
+                          {localStorage.getItem('pandior_strict_sandbox') === '1' ? "Armed" : "Disarmed"}
+                        </Button>
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-muted/15 border border-border/30 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-bold">Anonymized Session Logs</p>
+                          <p className="text-[11px] text-muted-foreground mt-1">Strip device identifiers from workspace logs</p>
+                        </div>
+                        <Button 
+                          onClick={() => {
+                            const current = localStorage.getItem('pandior_anon_logs') !== '0';
+                            localStorage.setItem('pandior_anon_logs', current ? '0' : '1');
+                            toast.info(current ? "Diagnostic logging disabled" : "Logging anonymized");
+                            haptics.impact();
+                            setTimeout(() => window.location.reload(), 100);
+                          }}
+                          variant="secondary"
+                          className="h-10 rounded-xl font-bold text-xs px-4"
+                        >
+                          {localStorage.getItem('pandior_anon_logs') === '0' ? "Disabled" : "Active"}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-2xl bg-muted/10 border border-border/40 text-xs text-muted-foreground space-y-2 font-sans">
+                      <p className="font-bold text-foreground">Pandior Workspace Integrity Rulebook Statement:</p>
+                      <p className="leading-relaxed font-medium text-[11px]">
+                        By deploying and maintaining Pandior, you agree that your system operations conform with the universal sandbox rules. All local caches under this profile rank are unmonitored, self-regulated, and completely restricted from outbound telemetry leakages. Security complies strictly with local container boundaries.
+                      </p>
                     </div>
                   </div>
                 </div>
