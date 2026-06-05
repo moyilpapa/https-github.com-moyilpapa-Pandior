@@ -36,7 +36,9 @@ import {
   Key,
   Lock,
   Scale,
-  Cpu
+  Cpu,
+  User,
+  Sliders
 } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, parseISO } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
@@ -84,7 +86,50 @@ export default function App() {
       return () => window.removeEventListener('resize', handleResize);
     }
   }, []);
+
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [prevTab, setPrevTab] = useState('dashboard');
+  const [calendarDirection, setCalendarDirection] = useState<'left' | 'right' | null>(null);
+
+  const handleTabChange = (tab: string) => {
+    setPrevTab(activeTab);
+    setActiveTab(tab);
+  };
+
+  const tabOrder = ['dashboard', 'calendar', 'tasks', 'files', 'history', 'privacy', 'settings'];
+  const prevIndex = tabOrder.indexOf(prevTab);
+  const currentIndex = tabOrder.indexOf(activeTab);
+  const tabTransitionDirection = currentIndex >= prevIndex ? 1 : -1;
+
+  // Handle keyboard ArrowLeft and ArrowRight navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl?.tagName === 'INPUT' || 
+        activeEl?.tagName === 'TEXTAREA' || 
+        activeEl?.getAttribute('contenteditable') === 'true'
+      ) {
+        return;
+      }
+      
+      const tabOrderList = ['dashboard', 'calendar', 'tasks', 'files', 'history', 'privacy', 'settings'];
+      const currentIdx = tabOrderList.indexOf(activeTab);
+      
+      if (e.key === 'ArrowRight') {
+        const nextIndex = (currentIdx + 1) % tabOrderList.length;
+        setPrevTab(activeTab);
+        setActiveTab(tabOrderList[nextIndex]);
+      } else if (e.key === 'ArrowLeft') {
+        const nextIndex = (currentIdx - 1 + tabOrderList.length) % tabOrderList.length;
+        setPrevTab(activeTab);
+        setActiveTab(tabOrderList[nextIndex]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab]);
   const [userName, setUserName] = useState(() => localStorage.getItem('pandior_user_name') || '');
   const [isOnboarding, setIsOnboarding] = useState(() => !localStorage.getItem('pandior_user_name'));
   const [tempName, setTempName] = useState('');
@@ -632,7 +677,7 @@ export default function App() {
               label="Dashboard" 
               active={activeTab === 'dashboard'} 
               collapsed={!isSidebarOpen}
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleTabChange('dashboard')}
             />
           </div>
           <div className="hidden md:block">
@@ -641,7 +686,7 @@ export default function App() {
               label="Calendar" 
               active={activeTab === 'calendar'} 
               collapsed={!isSidebarOpen}
-              onClick={() => setActiveTab('calendar')}
+              onClick={() => handleTabChange('calendar')}
             />
           </div>
           <div className="hidden md:block">
@@ -650,7 +695,7 @@ export default function App() {
               label="Tasks" 
               active={activeTab === 'tasks'} 
               collapsed={!isSidebarOpen}
-              onClick={() => setActiveTab('tasks')}
+              onClick={() => handleTabChange('tasks')}
             />
           </div>
           <div className="hidden md:block">
@@ -659,20 +704,35 @@ export default function App() {
               label="File" 
               active={activeTab === 'files'} 
               collapsed={!isSidebarOpen}
-              onClick={() => setActiveTab('files')}
+              onClick={() => handleTabChange('files')}
             />
           </div>
           
-          <NavItem 
-            icon={<Settings size={20} />} 
-            label="Setting" 
-            active={activeTab === 'settings'} 
-            collapsed={!isSidebarOpen}
-            onClick={() => {
-              setActiveTab('settings');
-              if (window.innerWidth < 768) setIsSidebarOpen(false);
-            }}
-          />
+          <div className="md:hidden">
+            <NavItem 
+              icon={<Settings size={20} />} 
+              label="Setting" 
+              active={activeTab === 'settings'} 
+              collapsed={!isSidebarOpen}
+              onClick={() => {
+                handleTabChange('settings');
+                if (window.innerWidth < 768) setIsSidebarOpen(false);
+              }}
+            />
+          </div>
+
+          <div className="hidden md:block">
+            <NavItem 
+              icon={<Shield size={20} />} 
+              label="Privacy & Security" 
+              active={activeTab === 'privacy'} 
+              collapsed={!isSidebarOpen}
+              onClick={() => {
+                handleTabChange('privacy');
+                if (window.innerWidth < 768) setIsSidebarOpen(false);
+              }}
+            />
+          </div>
           
           <NavItem 
             icon={<History size={20} />} 
@@ -680,21 +740,23 @@ export default function App() {
             active={activeTab === 'history'} 
             collapsed={!isSidebarOpen}
             onClick={() => {
-              setActiveTab('history');
+              handleTabChange('history');
               if (window.innerWidth < 768) setIsSidebarOpen(false);
             }}
           />
 
-          <NavItem 
-            icon={<Shield size={20} />} 
-            label="Privacy & Security" 
-            active={activeTab === 'privacy'} 
-            collapsed={!isSidebarOpen}
-            onClick={() => {
-              setActiveTab('privacy');
-              if (window.innerWidth < 768) setIsSidebarOpen(false);
-            }}
-          />
+          <div className="md:hidden">
+            <NavItem 
+              icon={<Shield size={20} />} 
+              label="Privacy & Security" 
+              active={activeTab === 'privacy'} 
+              collapsed={!isSidebarOpen}
+              onClick={() => {
+                handleTabChange('privacy');
+                if (window.innerWidth < 768) setIsSidebarOpen(false);
+              }}
+            />
+          </div>
         </nav>
 
         <div className="p-6">
@@ -910,7 +972,7 @@ export default function App() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => setActiveTab('settings')}
+                onClick={() => handleTabChange('settings')}
                 className={`hidden md:inline-flex rounded-xl hover:bg-muted/50 ${activeTab === 'settings' ? 'bg-primary/10 text-primary' : ''}`}
               >
                 <Settings size={20} />
@@ -965,10 +1027,10 @@ export default function App() {
                 {activeTab === 'dashboard' && (
                   <motion.div 
                     key="dashboard"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                    initial={{ opacity: 0, x: tabTransitionDirection * 35 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -tabTransitionDirection * 35 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                     className="bento-grid"
                   >
                     {/* Welcome Card */}
@@ -985,7 +1047,7 @@ export default function App() {
                         <div className="flex items-center gap-4 mt-10">
                            <Button 
                              className="rounded-2xl h-14 px-10 text-base font-bold shadow-2xl shadow-primary/30"
-                             onClick={() => setActiveTab('calendar')}
+                             onClick={() => handleTabChange('calendar')}
                            >
                               Review Deployment
                            </Button>
@@ -1032,7 +1094,7 @@ export default function App() {
                     <div className="col-span-12 lg:col-span-7 p-8 rounded-3xl glass-card">
                        <div className="flex items-center justify-between mb-10">
                           <h3 className="text-xl font-bold tracking-tight">Deployment Log</h3>
-                          <Button variant="ghost" size="sm" className="rounded-xl text-primary font-bold" onClick={() => setActiveTab('calendar')}>Sync Full Grid</Button>
+                          <Button variant="ghost" size="sm" className="rounded-xl text-primary font-bold" onClick={() => handleTabChange('calendar')}>Sync Full Grid</Button>
                        </div>
                        <div className="space-y-1">
                           {upcomingEvents.slice(0, 3).map(event => (
@@ -1071,7 +1133,7 @@ export default function App() {
                     <div className="col-span-12 lg:col-span-5 p-8 rounded-3xl glass-card">
                        <div className="flex items-center justify-between mb-10">
                           <h3 className="text-xl font-bold tracking-tight">Active Core</h3>
-                          <Button variant="ghost" size="sm" className="rounded-xl text-primary font-bold" onClick={() => setActiveTab('tasks')}>Queue</Button>
+                          <Button variant="ghost" size="sm" className="rounded-xl text-primary font-bold" onClick={() => handleTabChange('tasks')}>Queue</Button>
                        </div>
                        <div className="space-y-4">
                           {tasks.slice(0, 4).map(task => (
@@ -1108,10 +1170,10 @@ export default function App() {
             {activeTab === 'calendar' && (
               <motion.div 
                 key="calendar"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, x: tabTransitionDirection * 35 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -tabTransitionDirection * 35 }}
+                transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                 className="h-full flex flex-col space-y-8"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -1120,11 +1182,36 @@ export default function App() {
                     <p className="text-muted-foreground font-medium mt-1">Showing {events.length} active deployments for this sector.</p>
                   </div>
                   <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-2xl border border-border/50">
-                    <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 hover:bg-background shadow-sm" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-xl h-10 w-10 hover:bg-background shadow-sm transition-transform duration-150 active:scale-95" 
+                      onClick={() => {
+                        setCalendarDirection('left');
+                        setCurrentDate(subMonths(currentDate, 1));
+                      }}
+                    >
                       <ChevronLeft size={18} />
                     </Button>
-                    <Button variant="ghost" className="rounded-xl px-6 h-10 hover:bg-background shadow-sm font-bold text-xs uppercase tracking-widest" onClick={() => setCurrentDate(new Date())}>Current Epoch</Button>
-                    <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 hover:bg-background shadow-sm" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+                    <Button 
+                      variant="ghost" 
+                      className="rounded-xl px-6 h-10 hover:bg-background shadow-sm font-bold text-xs uppercase tracking-widest transition-transform duration-150 active:scale-95" 
+                      onClick={() => {
+                        setCalendarDirection(new Date().getTime() < currentDate.getTime() ? 'left' : 'right');
+                        setCurrentDate(new Date());
+                      }}
+                    >
+                      Current Epoch
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-xl h-10 w-10 hover:bg-background shadow-sm transition-transform duration-150 active:scale-95" 
+                      onClick={() => {
+                        setCalendarDirection('right');
+                        setCurrentDate(addMonths(currentDate, 1));
+                      }}
+                    >
                       <ChevronRight size={18} />
                     </Button>
                   </div>
@@ -1139,13 +1226,22 @@ export default function App() {
                     ))}
                   </div>
                   <div className="flex-1 overflow-hidden relative min-h-[450px]">
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence mode="wait" initial={false}>
                       <motion.div 
                         key={currentDate.getMonth() + '-' + currentDate.getFullYear()}
-                        initial={{ opacity: 0, scale: 0.99, filter: "blur(4px)" }}
-                        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                        exit={{ opacity: 0, scale: 0.99, filter: "blur(4px)" }}
-                        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                        initial={{ 
+                          opacity: 0, 
+                          x: calendarDirection === 'right' ? 30 : calendarDirection === 'left' ? -30 : 0
+                        }}
+                        animate={{ 
+                          opacity: 1, 
+                          x: 0
+                        }}
+                        exit={{ 
+                          opacity: 0, 
+                          x: calendarDirection === 'right' ? -30 : calendarDirection === 'left' ? 30 : 0
+                        }}
+                        transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                         className="absolute inset-0 grid grid-cols-7 grid-rows-6"
                       >
                         {renderCalendarDays(currentDate, events)}
@@ -1159,10 +1255,10 @@ export default function App() {
             {activeTab === 'tasks' && (
               <motion.div 
                 key="tasks"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, x: tabTransitionDirection * 35 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -tabTransitionDirection * 35 }}
+                transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                 className="max-w-4xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
@@ -1286,10 +1382,10 @@ export default function App() {
             {activeTab === 'files' && (
               <motion.div 
                 key="files"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, x: tabTransitionDirection * 35 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -tabTransitionDirection * 35 }}
+                transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                 className="max-w-5xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
@@ -1336,10 +1432,10 @@ export default function App() {
             {activeTab === 'history' && (
               <motion.div 
                 key="history"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, x: tabTransitionDirection * 35 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -tabTransitionDirection * 35 }}
+                transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                 className="max-w-4xl mx-auto space-y-8"
               >
                 <div className="flex items-center justify-between">
@@ -1403,10 +1499,10 @@ export default function App() {
             {activeTab === 'settings' && (
               <motion.div 
                 key="settings"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, x: tabTransitionDirection * 35 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -tabTransitionDirection * 35 }}
+                transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                 className="max-w-4xl mx-auto space-y-8 pb-10"
               >
                 <div>
@@ -1417,7 +1513,9 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Profile Management Card */}
                   <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 flex flex-col space-y-6 animate-fade-in-up">
-                    <h3 className="text-xl font-bold flex items-center gap-2">🛡️ Profile Configuration</h3>
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <User size={20} className="text-primary" /> Profile Configuration
+                    </h3>
                     
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -1451,7 +1549,7 @@ export default function App() {
                     <div className="pt-4">
                       <Button 
                         onClick={() => {
-                          toast.success("Profile records modernized successfully!", { icon: "🛡️" });
+                          toast.success("Profile records modernized successfully!");
                           haptics.impact();
                         }}
                         className="w-full rounded-2xl h-12 font-bold"
@@ -1463,7 +1561,9 @@ export default function App() {
 
                   {/* Integrations Card */}
                   <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 flex flex-col space-y-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2">🔌 Workspace Integrations</h3>
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <Sliders size={20} className="text-primary" /> Workspace Integrations
+                    </h3>
                     
                     <div className="space-y-4">
                       {/* Google Calendar */}
@@ -1483,7 +1583,7 @@ export default function App() {
                             const nState = !connectedAccounts.google;
                             setConnectedAccounts(prev => ({ ...prev, google: nState }));
                             localStorage.setItem('pandior_conn_google', nState ? "1" : "0");
-                            toast.success(nState ? "Google Calendar synchronized" : "Google Calendar uncoupled", { icon: "📅" });
+                            toast.success(nState ? "Google Calendar synchronized" : "Google Calendar uncoupled");
                             haptics.impact();
                           }}
                           className="h-10 rounded-xl px-4 text-xs font-bold"
@@ -1509,7 +1609,7 @@ export default function App() {
                             const nState = !connectedAccounts.zoom;
                             setConnectedAccounts(prev => ({ ...prev, zoom: nState }));
                             localStorage.setItem('pandior_conn_zoom', nState ? "1" : "0");
-                            toast.success(nState ? "Zoom workspace linked" : "Zoom integration disabled", { icon: "📹" });
+                            toast.success(nState ? "Zoom workspace linked" : "Zoom integration disabled");
                             haptics.impact();
                           }}
                           className="h-10 rounded-xl px-4 text-xs font-bold"
@@ -1522,7 +1622,9 @@ export default function App() {
 
                   {/* Visual Preferences */}
                   <div className="p-8 rounded-[2.5rem] glass-card border border-border/50 col-span-1 md:col-span-2 flex flex-col space-y-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2">🎨 Aesthetic Adaptability</h3>
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <Sun size={20} className="text-primary" /> Aesthetic Adaptability
+                    </h3>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                       <div className="p-5 rounded-2xl bg-muted/15 border border-border/30 flex flex-col justify-between">
@@ -1568,7 +1670,7 @@ export default function App() {
                             onClick={() => {
                               const bState = localStorage.getItem('pandior_sound') !== '0';
                               localStorage.setItem('pandior_sound', bState ? '0' : '1');
-                              toast.info(bState ? "Sound FX muted" : "Sounds active", { icon: "🔊" });
+                              toast.info(bState ? "Sound FX muted" : "Sounds active");
                               haptics.impact();
                             }}
                             variant="secondary"
@@ -1622,10 +1724,10 @@ export default function App() {
             {activeTab === 'privacy' && (
               <motion.div 
                 key="privacy"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                initial={{ opacity: 0, x: tabTransitionDirection * 35 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -tabTransitionDirection * 35 }}
+                transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.8 }}
                 className="max-w-4xl mx-auto space-y-8 pb-10"
               >
                 <div>
@@ -1768,8 +1870,8 @@ export default function App() {
 
   {/* Mobile Bottom Nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/5 dark:bg-black/15 backdrop-blur-3xl border-t border-white/10 dark:border-white/5 px-4 py-3 flex items-center justify-around z-40">
-          <MobileNavItem icon={<LayoutDashboard />} label="Home" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <MobileNavItem icon={<CalendarIcon />} label="Schedule" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
+          <MobileNavItem icon={<LayoutDashboard />} label="Home" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
+          <MobileNavItem icon={<CalendarIcon />} label="Schedule" active={activeTab === 'calendar'} onClick={() => handleTabChange('calendar')} />
           
           <motion.button 
             onClick={toggleVoice}
@@ -1779,8 +1881,8 @@ export default function App() {
             {isListening ? <X size={28} /> : <Mic size={28} />}
           </motion.button>
 
-          <MobileNavItem icon={<CheckSquare />} label="Tasks" active={activeTab === 'tasks'} onClick={() => setActiveTab('tasks')} />
-          <MobileNavItem icon={<Globe />} label="Vault" active={activeTab === 'files'} onClick={() => setActiveTab('files')} />
+          <MobileNavItem icon={<CheckSquare />} label="Tasks" active={activeTab === 'tasks'} onClick={() => handleTabChange('tasks')} />
+          <MobileNavItem icon={<Globe />} label="Vault" active={activeTab === 'files'} onClick={() => handleTabChange('files')} />
         </div>
       </main>
     </div>
