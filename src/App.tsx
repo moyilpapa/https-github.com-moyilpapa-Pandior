@@ -69,11 +69,94 @@ import { Event, Task, AttachedFile } from '@/types';
 
 import { haptics, notifications, isNative } from '@/lib/native-bridge';
 
+// Firebase imports
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { auth, db, OperationType, handleFirestoreError } from '@/lib/firebase';
+import { CloudLightning } from 'lucide-react';
+
 export default function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [firebaseUser, setFirebaseUser] = useState<any>(null);
+  const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
+
+  // Cloud & offline wrapper CRUD operations
+  const addEventCloud = async (event: Event) => {
+    if (!auth.currentUser) {
+      setEvents(prev => [...prev, event]);
+      return;
+    }
+    try {
+      const docRef = doc(db, 'events', event.id);
+      await setDoc(docRef, {
+        id: event.id,
+        ownerId: auth.currentUser.uid,
+        title: event.title,
+        start: event.start.toISOString(),
+        end: event.end.toISOString(),
+        description: event.description || '',
+        category: event.category || 'other',
+        priority: event.priority || 'medium'
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `events/${event.id}`);
+    }
+  };
+
+  const addTaskCloud = async (task: Task) => {
+    if (!auth.currentUser) {
+      setTasks(prev => [...prev, task]);
+      return;
+    }
+    try {
+      const docRef = doc(db, 'tasks', task.id);
+      await setDoc(docRef, {
+        id: task.id,
+        ownerId: auth.currentUser.uid,
+        title: task.title,
+        dueDate: task.dueDate.toISOString(),
+        completed: task.completed || false,
+        assignedFileId: task.assignedFileId || ''
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `tasks/${task.id}`);
+    }
+  };
+
+  const updateTaskCloud = async (task: Task) => {
+    if (!auth.currentUser) {
+      setTasks(prev => prev.map(t => t.id === task.id ? task : t));
+      return;
+    }
+    try {
+      const docRef = doc(db, 'tasks', task.id);
+      await setDoc(docRef, {
+        id: task.id,
+        ownerId: auth.currentUser.uid,
+        title: task.title,
+        dueDate: task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate,
+        completed: task.completed,
+        assignedFileId: task.assignedFileId || ''
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `tasks/${task.id}`);
+    }
+  };
+
+  const removeTaskCloud = async (id: string) => {
+    if (!auth.currentUser) {
+      setTasks(prev => prev.filter(t => t.id !== id));
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, 'tasks', id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `tasks/${id}`);
+    }
+  };
 
   // Sync sidebar open state on mount and update with screen size
   useEffect(() => {
@@ -153,167 +236,217 @@ export default function App() {
   });
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Persistence and server-side DB hydration effects
+  // Synchronize events from Firestore when authenticated
   useEffect(() => {
-    const hydrateData = async () => {
-      try {
-        const today = new Date();
-        const response = await fetch('/api/db');
-        if (response.ok) {
-          const dbData = await response.json();
-          
-          if (dbData.user) {
-            if (dbData.user.name) {
-              setUserName(dbData.user.name);
-              setIsOnboarding(false);
-            }
-            if (dbData.user.streak) setStreak(dbData.user.streak);
-            if (dbData.user.xp !== undefined) setXp(dbData.user.xp);
-            if (dbData.user.level) setLevel(dbData.user.level);
-          }
+    if (!firebaseUser) return;
 
-          if (dbData.events && dbData.events.length > 0) {
-            setEvents(dbData.events.map((e: any) => ({
-              ...e,
-              start: new Date(e.start),
-              end: new Date(e.end)
-            })));
+    const eventsQuery = query(collection(db, 'events'), where('ownerId', '==', firebaseUser.uid));
+    const unsubscribe = onSnapshot(eventsQuery, (snapshot) => {
+      const fbEvents: Event[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        fbEvents.push({
+          id: data.id,
+          title: data.title,
+          start: new Date(data.start),
+          end: new Date(data.end),
+          description: data.description || '',
+          category: data.category || 'other',
+          priority: data.priority || 'medium'
+        });
+      });
+      setEvents(fbEvents);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'events');
+    });
+
+    return () => unsubscribe();
+  }, [firebaseUser]);
+
+  // Synchronize tasks from Firestore when authenticated
+  useEffect(() => {
+    if (!firebaseUser) return;
+
+    const tasksQuery = query(collection(db, 'tasks'), where('ownerId', '==', firebaseUser.uid));
+    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+      const fbTasks: Task[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        fbTasks.push({
+          id: data.id,
+          title: data.title,
+          dueDate: new Date(data.dueDate),
+          completed: data.completed || false,
+          assignedFileId: data.assignedFileId || ''
+        });
+      });
+      setTasks(fbTasks);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'tasks');
+    });
+
+    return () => unsubscribe();
+  }, [firebaseUser]);
+
+  // Firebase auth status and hydration state manager
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setFirebaseUser(user);
+        // Load Profile from Firestore
+        const userDocRef = doc(db, 'users', user.uid);
+        try {
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.name) setUserName(userData.name);
+            if (userData.streak !== undefined) setStreak(userData.streak);
+            if (userData.xp !== undefined) setXp(userData.xp);
+            if (userData.level !== undefined) setLevel(userData.level);
           } else {
-            const savedEvents = localStorage.getItem('pandior_events');
-            if (savedEvents) {
-              const parsed = JSON.parse(savedEvents);
-              if (Array.isArray(parsed)) {
-                setEvents(parsed.map((e: any) => ({
+            // First time user profile creation
+            await setDoc(userDocRef, {
+              uid: user.uid,
+              name: user.displayName || userName || 'Commander',
+              streak: streak,
+              xp: xp,
+              level: level
+            });
+          }
+        } catch (error) {
+          handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+        }
+        setIsHydrated(true);
+      } else {
+        setFirebaseUser(null);
+        // Fallback to local and /api/db mock endpoints
+        const loadLocal = async () => {
+          try {
+            const response = await fetch('/api/db');
+            if (response.ok) {
+              const dbData = await response.json();
+              if (dbData.user) {
+                if (dbData.user.name) {
+                  setUserName(dbData.user.name);
+                }
+                if (dbData.user.streak) setStreak(dbData.user.streak);
+                if (dbData.user.xp !== undefined) setXp(dbData.user.xp);
+                if (dbData.user.level) setLevel(dbData.user.level);
+              }
+              if (dbData.events && dbData.events.length > 0) {
+                setEvents(dbData.events.map((e: any) => ({
                   ...e,
                   start: new Date(e.start),
                   end: new Date(e.end)
                 })));
-              }
-            } else {
-              setEvents([
-                {
-                  id: '1',
-                  title: 'Team Sync & Strategy',
-                  start: new Date(today.setHours(10, 0, 0, 0)),
-                  end: new Date(today.setHours(11, 0, 0, 0)),
-                  category: 'meeting',
-                  priority: 'medium',
-                  description: 'Discuss Q2 goals and roadmap.'
-                },
-                {
-                  id: '2',
-                  title: 'Design Review',
-                  start: new Date(addDays(today, 1).setHours(14, 0, 0, 0)),
-                  end: new Date(addDays(today, 1).setHours(15, 30, 0, 0)),
-                  category: 'work',
-                  priority: 'medium',
+              } else {
+                // localstorage fallback
+                const storedEvents = localStorage.getItem('pandior_events');
+                if (storedEvents) {
+                  setEvents(JSON.parse(storedEvents).map((e: any) => ({
+                    ...e,
+                    start: new Date(e.start),
+                    end: new Date(e.end)
+                  })));
                 }
-              ]);
-            }
-          }
-
-          if (dbData.tasks && dbData.tasks.length > 0) {
-            setTasks(dbData.tasks.map((t: any) => ({
-              ...t,
-              dueDate: new Date(t.dueDate)
-            })));
-          } else {
-            const savedTasks = localStorage.getItem('pandior_tasks');
-            if (savedTasks) {
-              const parsed = JSON.parse(savedTasks);
-              if (Array.isArray(parsed)) {
-                setTasks(parsed.map((t: any) => ({
+              }
+              if (dbData.tasks && dbData.tasks.length > 0) {
+                setTasks(dbData.tasks.map((t: any) => ({
                   ...t,
                   dueDate: new Date(t.dueDate)
                 })));
+              } else {
+                // localstorage fallback
+                const storedTasks = localStorage.getItem('pandior_tasks');
+                if (storedTasks) {
+                  setTasks(JSON.parse(storedTasks).map((t: any) => ({
+                    ...t,
+                    dueDate: new Date(t.dueDate)
+                  })));
+                }
               }
-            } else {
-              setTasks([
-                { id: '1', title: 'Review project spec', dueDate: addDays(today, 2), completed: false },
-                { id: '2', title: 'Update design assets', dueDate: today, completed: true },
-                { id: '3', title: 'Send weekly report', dueDate: addDays(today, 1), completed: false },
-              ]);
             }
+          } catch (err) {
+            console.error("Local load failed:", err);
+          } finally {
+            setIsHydrated(true);
           }
-        }
-      } catch (err) {
-        console.error("Failed to load backend DB scheduler data, using localStorage fallback:", err);
-        // localStorage Fallback
-        const savedEvents = localStorage.getItem('pandior_events');
-        const savedTasks = localStorage.getItem('pandior_tasks');
-        const today = new Date();
-        
-        if (savedEvents) {
-          const parsed = JSON.parse(savedEvents);
-          if (Array.isArray(parsed)) {
-            setEvents(parsed.map((e: any) => ({
-              ...e,
-              start: new Date(e.start),
-              end: new Date(e.end)
-            })));
-          }
-        }
-        if (savedTasks) {
-          const parsed = JSON.parse(savedTasks);
-          if (Array.isArray(parsed)) {
-            setTasks(parsed.map((t: any) => ({
-              ...t,
-              dueDate: new Date(t.dueDate)
-            })));
-          }
-        }
-      } finally {
-        setSuggestions([
-          { title: 'Focus Time', reason: 'You have a 3-hour gap on Wednesday afternoon.', suggestedTime: 'Wed, 2:00 PM' },
-          { title: 'Reschedule Sync', reason: 'Conflict detected with Design Review.', suggestedTime: 'Thu, 10:00 AM' }
-        ]);
-        setIsHydrated(true);
+        };
+        loadLocal();
       }
-    };
-    hydrateData();
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
-  // Save changes to backend database when hydrated
+  // Sync profile metadata to Firestore (when logged in) or /api/db (when logged out)
   useEffect(() => {
     if (!isHydrated) return;
-    localStorage.setItem('pandior_events', JSON.stringify(events));
-    fetch('/api/db', {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ events })
-    }).catch(err => console.error("Failed syncing events to DB:", err));
-  }, [events, isHydrated]);
+    if (firebaseUser) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      setDoc(userDocRef, {
+        uid: firebaseUser.uid,
+        name: userName,
+        streak: streak,
+        xp: xp,
+        level: level
+      }, { merge: true })
+        .catch((error) => {
+          handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
+        });
+    } else {
+      localStorage.setItem('pandior_user_name', userName);
+      fetch('/api/db', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: { name: userName } })
+      }).catch(err => console.error("Failed syncing username to DB:", err));
+    }
+  }, [userName, isHydrated, firebaseUser]);
 
   useEffect(() => {
     if (!isHydrated) return;
-    localStorage.setItem('pandior_tasks', JSON.stringify(tasks));
-    fetch('/api/db', {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tasks })
-    }).catch(err => console.error("Failed syncing tasks to DB:", err));
-  }, [tasks, isHydrated]);
+    if (firebaseUser) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      setDoc(userDocRef, {
+        uid: firebaseUser.uid,
+        streak: streak
+      }, { merge: true })
+        .catch((error) => {
+          handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
+        });
+    } else {
+      localStorage.setItem('pandior_streak', streak.toString());
+      fetch('/api/db', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: { streak } })
+      }).catch(err => console.error("Failed syncing streak to DB:", err));
+    }
+  }, [streak, isHydrated, firebaseUser]);
 
   useEffect(() => {
     if (!isHydrated) return;
-    localStorage.setItem('pandior_streak', streak.toString());
-    fetch('/api/db', {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user: { streak } })
-    }).catch(err => console.error("Failed syncing streak to DB:", err));
-  }, [streak, isHydrated]);
+    if (firebaseUser) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      setDoc(userDocRef, {
+        uid: firebaseUser.uid,
+        xp: xp,
+        level: level
+      }, { merge: true })
+        .catch((error) => {
+          handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}`);
+        });
+    } else {
+      localStorage.setItem('pandior_xp', xp.toString());
+      localStorage.setItem('pandior_level', level.toString());
+      fetch('/api/db', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: { xp, level } })
+      }).catch(err => console.error("Failed syncing gaming level to DB:", err));
+    }
 
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem('pandior_xp', xp.toString());
-    localStorage.setItem('pandior_level', level.toString());
-    fetch('/api/db', {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user: { xp, level } })
-    }).catch(err => console.error("Failed syncing gaming level to DB:", err));
-    
     // Level up logic: 100 XP per level
     if (xp >= level * 100) {
       setLevel(prev => prev + 1);
@@ -323,17 +456,28 @@ export default function App() {
       });
       haptics.impact();
     }
-  }, [xp, level, isHydrated]);
+  }, [xp, level, isHydrated, firebaseUser]);
 
+  // Save changes to backend database when hydrated (if offline)
   useEffect(() => {
-    if (!isHydrated || !userName) return;
-    localStorage.setItem('pandior_user_name', userName);
+    if (!isHydrated || firebaseUser) return;
+    localStorage.setItem('pandior_events', JSON.stringify(events));
     fetch('/api/db', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user: { name: userName } })
-    }).catch(err => console.error("Failed syncing username to DB:", err));
-  }, [userName, isHydrated]);
+      body: JSON.stringify({ events })
+    }).catch(err => console.error("Failed syncing events to DB:", err));
+  }, [events, isHydrated, firebaseUser]);
+
+  useEffect(() => {
+    if (!isHydrated || firebaseUser) return;
+    localStorage.setItem('pandior_tasks', JSON.stringify(tasks));
+    fetch('/api/db', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tasks })
+    }).catch(err => console.error("Failed syncing tasks to DB:", err));
+  }, [tasks, isHydrated, firebaseUser]);
 
   // Real streak logic
   useEffect(() => {
@@ -471,7 +615,7 @@ export default function App() {
           category: result.event.category || 'other',
           priority: result.event.priority || 'medium',
         };
-        setEvents(prev => [...prev, newEvent]);
+        addEventCloud(newEvent);
         toast.success(result.message || "Event scheduled!");
         notifications.schedule("Pandior: New Event", `Scheduled: ${newEvent.title}`);
         addNotification("Calendar Event Synced", `Scheduled: ${newEvent.title}`);
@@ -493,7 +637,7 @@ export default function App() {
           dueDate: taskDue,
           completed: false,
         };
-        setTasks(prev => [...prev, newTask]);
+        addTaskCloud(newTask);
         toast.success(result.message || "Task added!");
         notifications.schedule("Pandior: New Task", `Added: ${newTask.title}`);
         addNotification("Task Synced To Dashboard", `Added: ${newTask.title}`);
@@ -1141,8 +1285,9 @@ export default function App() {
                               key={task.id} 
                               className="flex items-center gap-5 p-4 rounded-2xl bg-muted/20 hover:bg-muted/40 border border-border/50 smooth-transition group cursor-pointer"
                               onClick={() => {
-                                setTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
-                                if (!task.completed) {
+                                const newCompleted = !task.completed;
+                                updateTaskCloud({ ...task, completed: newCompleted });
+                                if (newCompleted) {
                                   addXp(20);
                                   toast.success("+20 XP Synchronized");
                                   addNotification("Objective Completed", `Task "${task.title}" completed. +20 XP`);
@@ -1287,12 +1432,12 @@ export default function App() {
                           const title = (document.getElementById('task-title') as HTMLInputElement).value;
                           const date = (document.getElementById('task-date') as HTMLInputElement).value;
                           if (title && date) {
-                            setTasks(prev => [...prev, {
+                            addTaskCloud({
                               id: Math.random().toString(36).substr(2, 9),
                               title,
                               dueDate: new Date(date),
                               completed: false
-                            }]);
+                            });
                             toast.success("Objective Synchronized");
                             addNotification("Objective Established", `Objective: ${title}`);
                           }
@@ -1312,18 +1457,13 @@ export default function App() {
                       <div 
                         className={`w-10 h-10 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${task.completed ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/30' : 'border-muted-foreground/30 hover:border-primary group-hover:scale-110'}`}
                         onClick={() => {
-                          setTasks(prev => prev.map(t => {
-                            if (t.id === task.id) {
-                              const newCompleted = !t.completed;
-                              if (newCompleted) {
-                                addXp(20);
-                                toast.success("+20 XP Synchronized");
-                                addNotification("Objective Completed", `Task "${t.title}" completed. +20 XP`);
-                              }
-                              return { ...t, completed: newCompleted };
-                            }
-                            return t;
-                          }));
+                          const newCompleted = !task.completed;
+                          updateTaskCloud({ ...task, completed: newCompleted });
+                          if (newCompleted) {
+                            addXp(20);
+                            toast.success("+20 XP Synchronized");
+                            addNotification("Objective Completed", `Task "${task.title}" completed. +20 XP`);
+                          }
                         }}
                       >
                         {task.completed && <Check size={20} strokeWidth={4} className="text-primary-foreground" />}
@@ -1357,7 +1497,7 @@ export default function App() {
                             <AlertDialogAction 
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                               onClick={() => {
-                                setTasks(prev => prev.filter(t => t.id !== task.id));
+                                removeTaskCloud(task.id);
                                 toast.success("Data Purged");
                               }}
                             >
@@ -1518,6 +1658,45 @@ export default function App() {
                     </h3>
                     
                     <div className="space-y-4">
+                      {firebaseUser ? (
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-primary/10 border border-primary/20">
+                          <Avatar className="w-12 h-12 rounded-xl ring-2 ring-primary/40">
+                            <AvatarImage src={firebaseUser.photoURL} className="rounded-xl object-cover animate-fade-in" />
+                            <AvatarFallback className="bg-primary/20 text-primary font-bold">{firebaseUser.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-sm text-foreground truncate">{firebaseUser.displayName || firebaseUser.email}</h4>
+                            <p className="text-xs text-primary/80 font-bold flex items-center gap-1 mt-0.5">
+                              <CloudLightning size={12} className="animate-pulse" /> Cloud Active Security
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-2xl border border-dashed border-border/60 text-center space-y-3">
+                          <p className="text-xs text-muted-foreground font-semibold">Link your profile with Google to safeguard objectives across all tactical arrays.</p>
+                          <Button 
+                            className="w-full bg-[#4285F4] hover:bg-[#4285F4]/90 text-white font-bold text-xs h-10 rounded-xl flex items-center justify-center gap-2"
+                            onClick={async () => {
+                              const provider = new GoogleAuthProvider();
+                              try {
+                                const result = await signInWithPopup(auth, provider);
+                                toast.success(`Welcome back, ${result.user.displayName}`);
+                              } catch (err: any) {
+                                handleFirestoreError(err, OperationType.GET, 'auth');
+                              }
+                            }}
+                          >
+                            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
+                            </svg>
+                            Secure Link-up via Google
+                          </Button>
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <Label htmlFor="perf-user-name" className="text-xs font-black uppercase tracking-widest text-zinc-950 dark:text-zinc-50">Designation Name</Label>
                         <Input 
@@ -1546,7 +1725,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-4 flex flex-col gap-3">
                       <Button 
                         onClick={() => {
                           toast.success("Profile records modernized successfully!");
@@ -1556,6 +1735,18 @@ export default function App() {
                       >
                         Save Profiling Metadata
                       </Button>
+                      {firebaseUser && (
+                        <Button 
+                          variant="ghost"
+                          onClick={() => {
+                            signOut(auth);
+                            toast.success("Tactical profile disconnected safely.");
+                          }}
+                          className="w-full rounded-2xl h-11 border border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive font-black text-xs uppercase"
+                        >
+                          Safely Uncouple Profile
+                        </Button>
+                      )}
                     </div>
                   </div>
 

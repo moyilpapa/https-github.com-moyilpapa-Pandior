@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile and gamification state linked to their authentication UID",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The Firebase Authentication UID of the user" },
+        "name": { "type": "string", "description": "The display name of the user" },
+        "streak": { "type": "number", "description": "The user's current consecutive active day streak" },
+        "xp": { "type": "number", "description": "Experience points earned" },
+        "level": { "type": "number", "description": "The user's level" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "streak", "xp", "level"]
+    },
+    "Event": {
+      "title": "Calendar Event",
+      "description": "A scheduled event in the user's workspace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the event" },
+        "ownerId": { "type": "string", "description": "The UID of the user who owns this event" },
+        "title": { "type": "string" },
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["work", "personal", "meeting", "other"] },
+        "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "title", "start", "end", "category", "priority"]
+    },
+    "Task": {
+      "title": "Task Item",
+      "description": "An action item or task to complete",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string", "description": "The UID of the user who owns this task" },
+        "title": { "type": "string" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "title", "dueDate", "completed"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "The profile configuration doc for a authenticated user"
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Calendar events configured by users"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "To-do lists and queues created by users"
+    }
+  }
+}
